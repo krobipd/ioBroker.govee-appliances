@@ -1,0 +1,74 @@
+name: Device Data
+description: Share diagnostics data from your Govee appliance to help development
+title: "[Device] "
+labels: ["device-data"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing your device data! This helps us verify that the adapter works correctly with your hardware.
+
+        **How to export:** In ioBroker objects, go to `govee-appliances.0.devices.<your_device>.raw`, click `diagnostics_export`, then copy the content of `diagnostics_result`.
+
+  - type: input
+    id: model
+    attributes:
+      label: Device model
+      description: The Govee SKU (e.g. H7131, H7102, H5179)
+      placeholder: H7131
+    validations:
+      required: true
+
+  - type: input
+    id: device_name
+    attributes:
+      label: Device name
+      description: What you named the device in the Govee app
+      placeholder: Living Room Heater
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics JSON
+      description: Paste the full content of `diagnostics_result` here
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: working
+    attributes:
+      label: What works?
+      description: Which controls/states work correctly?
+      placeholder: |
+        - Power on/off works
+        - Temperature reading is correct
+        - Work mode changes
+
+  - type: textarea
+    id: not_working
+    attributes:
+      label: What doesn't work?
+      description: Which controls/states are missing, wrong, or broken?
+      placeholder: |
+        - Target temperature doesn't change on the device
+        - Humidity sensor shows 0
+
+  - type: dropdown
+    id: mqtt
+    attributes:
+      label: MQTT connected?
+      description: Did you configure email + password for AWS IoT MQTT?
+      options:
+        - "Yes — MQTT connected"
+        - "No — API key only"
+    validations:
+      required: true
+
+  - type: input
+    id: adapter_version
+    attributes:
+      label: Adapter version
+      placeholder: 0.0.1
+    validations:
+      required: true
