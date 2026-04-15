@@ -1,0 +1,362 @@
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var govee_mqtt_client_exports = {};
+__export(govee_mqtt_client_exports, {
+  GoveeMqttClient: () => GoveeMqttClient
+});
+module.exports = __toCommonJS(govee_mqtt_client_exports);
+var forge = __toESM(require("node-forge"));
+var mqtt = __toESM(require("mqtt"));
+var import_http_client = require("./http-client.js");
+var import_types = require("./types.js");
+const MAX_AUTH_FAILURES = 3;
+const LOGIN_URL = "https://app2.govee.com/account/rest/account/v2/login";
+const IOT_KEY_URL = "https://app2.govee.com/app/v1/account/iot/key";
+const APP_VERSION = "7.3.30";
+const CLIENT_TYPE = "1";
+const CLIENT_ID = "d39f7b0732a24e58acf771103ebefc04";
+const USER_AGENT = "GoveeHome/7.3.30 (com.ihoment.GoVeeSensor; build:3; iOS 26.3.1) Alamofire/5.11.1";
+const AMAZON_ROOT_CA1 = `-----BEGIN CERTIFICATE-----
+MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF
+ADA5MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6
+b24gUm9vdCBDQSAxMB4XDTE1MDUyNjAwMDAwMFoXDTM4MDExNzAwMDAwMFowOTEL
+MAkGA1UEBhMCVVMxDzANBgNVBAoTBkFtYXpvbjEZMBcGA1UEAxMQQW1hem9uIFJv
+b3QgQ0EgMTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALJ4gHHKeNXj
+ca9HgFB0fW7Y14h29Jlo91ghYPl0hAEvrAIthtOgQ3pOsqTQNroBvo3bSMgHFzZM
+9O6II8c+6zf1tRn4SWiw3te5djgdYZ6k/oI2peVKVuRF4fn9tBb6dNqcmzU5L/qw
+IFAGbHrQgLKm+a/sRxmPUDgH3KKHOVj4utWp+UhnMJbulHheb4mjUcAwhmahRWa6
+VOujw5H5SNz/0egwLX0tdHA114gk957EWW67c4cX8jJGKLhD+rcdqsq08p8kDi1L
+93FcXmn/6pUCyziKrlA4b9v7LWIbxcceVOF34GfID5yHI9Y/QCB/IIDEgEw+OyQm
+jgSubJrIqg0CAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMC
+AYYwHQYDVR0OBBYEFIQYzIU07LwMlJQuCFmcx7IQTgoIMA0GCSqGSIb3DQEBCwUA
+A4IBAQCY8jdaQZChGsV2USggNiMOruYou6r4lK5IpDB/G/wkjUu0yKGX9rbxenDI
+U5PMCCjjmCXPI6T53iHTfIUJrU6adTrCC2qJeHZERxhlbI1Bjjt/msv0tadQ1wUs
+N+gDS63pYaACbvXy8MWy7Vu33PqUXHeeE6V/Uq2V8viTO96LXFvKWlJbYK8U90vv
+o/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU
+5MsI+yMRQ+hDKXJioaldXgjUkK642M4UwtBV8ob2xJNDd2ZhwLnoQdeXeGADbkpy
+rqXRfboQnoZsG4q5WTP468SQvvG5
+-----END CERTIFICATE-----`;
+class GoveeMqttClient {
+  email;
+  password;
+  log;
+  timers;
+  client = null;
+  accountTopic = "";
+  _bearerToken = "";
+  accountId = "";
+  reconnectTimer = void 0;
+  reconnectAttempts = 0;
+  authFailCount = 0;
+  lastErrorCategory = null;
+  onStatus = null;
+  onRaw = null;
+  onConnection = null;
+  /**
+   * @param email Govee account email
+   * @param password Govee account password
+   * @param log ioBroker logger
+   * @param timers Timer adapter
+   */
+  constructor(email, password, log, timers) {
+    this.email = email;
+    this.password = password;
+    this.log = log;
+    this.timers = timers;
+  }
+  /** Bearer token from login — available after connect */
+  get token() {
+    return this._bearerToken;
+  }
+  /**
+   * Connect to Govee MQTT.
+   * Flow: Login → Get IoT Key → Extract certs from P12 → Connect MQTT
+   *
+   * @param onStatus Called on device status updates
+   * @param onConnection Called on connection state changes
+   * @param onRaw Called with raw BLE packets for research
+   */
+  async connect(onStatus, onConnection, onRaw) {
+    var _a, _b, _c, _d;
+    this.onStatus = onStatus;
+    this.onConnection = onConnection;
+    this.onRaw = onRaw != null ? onRaw : null;
+    try {
+      const loginResp = await this.login();
+      if (!loginResp.client) {
+        const apiStatus = (_a = loginResp.status) != null ? _a : 0;
+        const apiMsg = (_b = loginResp.message) != null ? _b : "unknown error";
+        const statusStr = `(status ${apiStatus || "?"})`;
+        if (apiStatus === 429 || /too many|rate.?limit|frequent|throttl/i.test(apiMsg)) {
+          throw new Error(`Rate limited by Govee: ${apiMsg} ${statusStr}`);
+        }
+        if (apiStatus === 401 || /password|credential|unauthorized/i.test(apiMsg)) {
+          throw new Error(`Login failed: ${apiMsg} ${statusStr}`);
+        }
+        if (/abnormal|blocked|suspended|disabled/i.test(apiMsg)) {
+          throw new Error(
+            `Account temporarily locked by Govee: ${apiMsg} ${statusStr}`
+          );
+        }
+        throw new Error(`Govee login rejected: ${apiMsg} ${statusStr}`);
+      }
+      this._bearerToken = loginResp.client.token;
+      this.accountId = String(loginResp.client.accountId);
+      this.accountTopic = loginResp.client.topic;
+      const iotResp = await this.getIotKey();
+      if (!((_c = iotResp.data) == null ? void 0 : _c.endpoint)) {
+        throw new Error("IoT key response missing endpoint/certificate data");
+      }
+      const { endpoint, p12, p12Pass } = iotResp.data;
+      const { key, cert, ca } = this.extractCertsFromP12(p12, p12Pass);
+      const clientId = `AP/${this.accountId}/${this.generateUuid()}`;
+      this.client = mqtt.connect(`mqtts://${endpoint}:8883`, {
+        clientId,
+        key,
+        cert,
+        ca,
+        protocolVersion: 4,
+        keepalive: 60,
+        reconnectPeriod: 0,
+        rejectUnauthorized: true
+      });
+      this.client.on("connect", () => {
+        var _a2;
+        this.reconnectAttempts = 0;
+        this.authFailCount = 0;
+        if (this.lastErrorCategory) {
+          this.log.info("MQTT connection restored");
+          this.lastErrorCategory = null;
+        } else {
+          this.log.info("MQTT connected to AWS IoT");
+        }
+        (_a2 = this.client) == null ? void 0 : _a2.subscribe(this.accountTopic, { qos: 0 }, (err) => {
+          var _a3;
+          if (err) {
+            this.log.warn(`MQTT subscribe failed: ${err.message}`);
+          } else {
+            this.log.debug(`MQTT subscribed to account topic`);
+            (_a3 = this.onConnection) == null ? void 0 : _a3.call(this, true);
+          }
+        });
+      });
+      this.client.on("message", (_topic, payload) => {
+        this.handleMessage(payload);
+      });
+      this.client.on("error", (err) => {
+        this.log.debug(`MQTT error: ${err.message}`);
+      });
+      this.client.on("close", () => {
+        var _a2;
+        (_a2 = this.onConnection) == null ? void 0 : _a2.call(this, false);
+        if (!this.lastErrorCategory) {
+          this.lastErrorCategory = "NETWORK";
+          this.log.debug("MQTT disconnected \u2014 will reconnect");
+        }
+        this.scheduleReconnect();
+      });
+    } catch (err) {
+      const category = (0, import_types.classifyError)(err);
+      const msg = `MQTT connection failed: ${err instanceof Error ? err.message : String(err)}`;
+      if (category === "AUTH") {
+        this.authFailCount++;
+        if (this.authFailCount >= MAX_AUTH_FAILURES) {
+          this.log.warn(
+            `MQTT login failed ${this.authFailCount} times \u2014 check email/password in adapter settings`
+          );
+          (_d = this.onConnection) == null ? void 0 : _d.call(this, false);
+          return;
+        }
+      } else {
+        this.authFailCount = 0;
+      }
+      if (category !== this.lastErrorCategory) {
+        this.lastErrorCategory = category;
+        this.log.warn(msg);
+      } else {
+        this.log.debug(msg);
+      }
+      this.scheduleReconnect();
+    }
+  }
+  /** Whether MQTT is currently connected */
+  get connected() {
+    var _a, _b;
+    return (_b = (_a = this.client) == null ? void 0 : _a.connected) != null ? _b : false;
+  }
+  /** Disconnect and cleanup */
+  disconnect() {
+    if (this.reconnectTimer) {
+      this.timers.clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = void 0;
+    }
+    if (this.client) {
+      this.client.removeAllListeners();
+      this.client.on("error", () => {
+      });
+      this.client.end(true);
+      this.client = null;
+    }
+  }
+  /**
+   * Parse MQTT status message.
+   * Extracts state updates AND raw BLE packets for research.
+   *
+   * @param payload Raw MQTT message buffer
+   */
+  handleMessage(payload) {
+    var _a, _b, _c, _d;
+    try {
+      const raw = JSON.parse(payload.toString());
+      const update = {
+        sku: (_a = raw.sku) != null ? _a : "",
+        device: (_b = raw.device) != null ? _b : "",
+        state: raw.state,
+        op: raw.op
+      };
+      if (!update.sku && !update.device) {
+        return;
+      }
+      const packets = (_c = update.op) == null ? void 0 : _c.command;
+      if (packets && packets.length > 0 && this.onRaw) {
+        this.onRaw(update.sku, update.device, packets);
+      }
+      (_d = this.onStatus) == null ? void 0 : _d.call(this, update);
+    } catch {
+      this.log.debug(
+        `MQTT: Failed to parse message: ${payload.toString().slice(0, 200)}`
+      );
+    }
+  }
+  /** Schedule reconnect with exponential backoff */
+  scheduleReconnect() {
+    if (this.reconnectTimer) {
+      return;
+    }
+    if (this.authFailCount >= MAX_AUTH_FAILURES) {
+      return;
+    }
+    this.reconnectAttempts++;
+    const delay = Math.min(
+      5e3 * Math.pow(2, this.reconnectAttempts - 1),
+      3e5
+    );
+    this.log.debug(
+      `MQTT: Reconnecting in ${delay / 1e3}s (attempt ${this.reconnectAttempts})`
+    );
+    this.reconnectTimer = this.timers.setTimeout(() => {
+      var _a;
+      this.reconnectTimer = void 0;
+      if (this.onStatus && this.onConnection) {
+        void this.connect(
+          this.onStatus,
+          this.onConnection,
+          (_a = this.onRaw) != null ? _a : void 0
+        );
+      }
+    }, delay);
+  }
+  /** Login to Govee account */
+  login() {
+    return (0, import_http_client.httpsRequest)({
+      method: "POST",
+      url: LOGIN_URL,
+      headers: {
+        appVersion: APP_VERSION,
+        clientId: CLIENT_ID,
+        clientType: CLIENT_TYPE,
+        "User-Agent": USER_AGENT,
+        timezone: "Europe/Berlin",
+        country: "DE",
+        envid: "0",
+        iotversion: "0"
+      },
+      body: {
+        email: this.email,
+        password: this.password,
+        client: CLIENT_ID
+      }
+    });
+  }
+  /** Get IoT key (P12 certificate) */
+  getIotKey() {
+    return (0, import_http_client.httpsRequest)({
+      method: "GET",
+      url: IOT_KEY_URL,
+      headers: {
+        Authorization: `Bearer ${this._bearerToken}`,
+        appVersion: APP_VERSION,
+        clientId: CLIENT_ID,
+        clientType: CLIENT_TYPE,
+        "User-Agent": USER_AGENT
+      }
+    });
+  }
+  /**
+   * Extract PEM key + cert from PKCS12
+   *
+   * @param p12Base64 Base64-encoded PKCS12 data
+   * @param password PKCS12 password
+   */
+  extractCertsFromP12(p12Base64, password) {
+    var _a, _b;
+    const p12Der = forge.util.decode64(p12Base64);
+    const p12Asn1 = forge.asn1.fromDer(p12Der);
+    const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, password);
+    const keyBags = p12.getBags({
+      bagType: forge.pki.oids.pkcs8ShroudedKeyBag
+    });
+    const keyBag = (_a = keyBags[forge.pki.oids.pkcs8ShroudedKeyBag]) == null ? void 0 : _a[0];
+    if (!(keyBag == null ? void 0 : keyBag.key)) {
+      throw new Error("No private key found in P12");
+    }
+    const key = forge.pki.privateKeyToPem(keyBag.key);
+    const certBags = p12.getBags({ bagType: forge.pki.oids.certBag });
+    const certBag = (_b = certBags[forge.pki.oids.certBag]) == null ? void 0 : _b[0];
+    if (!(certBag == null ? void 0 : certBag.cert)) {
+      throw new Error("No certificate found in P12");
+    }
+    const cert = forge.pki.certificateToPem(certBag.cert);
+    const ca = AMAZON_ROOT_CA1;
+    return { key, cert, ca };
+  }
+  /** Generate UUID v4 */
+  generateUuid() {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0;
+      const v = c === "x" ? r : r & 3 | 8;
+      return v.toString(16);
+    });
+  }
+}
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  GoveeMqttClient
+});
+//# sourceMappingURL=govee-mqtt-client.js.map

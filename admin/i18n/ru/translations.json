@@ -1,0 +1,15 @@
+{
+    "cloudHeader": "Cloud API (required)",
+    "cloudInfo": "Enter your Govee API key to control appliances via Cloud API. Get your key in the Govee Home app under Account > Settings > About Us > Apply for API Key. Note: If you also use govee-smart, both adapters share the same API rate limit (10,000 calls/day).",
+    "apiKeyLabel": "API Key",
+    "pollIntervalLabel": "Polling interval (seconds)",
+    "pollIntervalTooltip": "How often to refresh device states from the Cloud API. Higher values save API quota. Default: 120 seconds.",
+    "mqttHeader": "Govee Account (optional)",
+    "mqttInfo": "Enter your Govee account credentials to enable real-time status updates via MQTT. This provides instant feedback when device state changes. Without this, status is only updated during polling cycles.",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "supportHeader": "Support",
+    "aboutInfo": "This adapter is free and open source. If you find it useful, consider supporting the development.",
+    "donateKofi": "Support on Ko-fi",
+    "donatePaypal": "Donate via PayPal"
+}
