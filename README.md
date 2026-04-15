@@ -161,6 +161,11 @@ If you find this adapter useful, consider supporting the development:
 ## Changelog
 
 ### **WORK IN PROGRESS**
+- Fix: Event states now update correctly from OpenAPI MQTT
+- Fix: Cloud API state response stored on every poll
+- Added OpenAPI MQTT raw data states (openapiLastEvents, openapiEventCount)
+- Improved diagnostics export with MQTT and OpenAPI statistics
+- GitHub issue templates for device data collection and bug reports
 
 ### 0.0.1 (2026-04-15)
 - Initial alpha release
