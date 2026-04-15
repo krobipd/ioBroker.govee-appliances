@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "govee-appliances",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "news": {
+      "0.0.2": {
+        "en": "Fix event state updates from OpenAPI MQTT, improved diagnostics export, added raw data states for OpenAPI events",
+        "de": "Fix Event-State-Updates von OpenAPI MQTT, verbesserte Diagnostics, neue Rohdaten-States für OpenAPI Events",
+        "ru": "Исправление обновления состояний событий из OpenAPI MQTT, улучшенная диагностика, новые состояния для событий OpenAPI",
+        "pt": "Correção de atualizações de estados de eventos do OpenAPI MQTT, diagnósticos melhorados, novos estados para eventos OpenAPI",
+        "nl": "Fix event state-updates van OpenAPI MQTT, verbeterde diagnostics, nieuwe raw data states voor OpenAPI events",
+        "fr": "Correction des mises à jour d'états d'événements OpenAPI MQTT, diagnostics améliorés, nouveaux états pour événements OpenAPI",
+        "it": "Fix aggiornamenti stati eventi da OpenAPI MQTT, diagnostica migliorata, nuovi stati per eventi OpenAPI",
+        "es": "Corrección de actualizaciones de estados de eventos OpenAPI MQTT, diagnósticos mejorados, nuevos estados para eventos OpenAPI",
+        "pl": "Poprawka aktualizacji stanów zdarzeń z OpenAPI MQTT, ulepszona diagnostyka, nowe stany dla zdarzeń OpenAPI",
+        "uk": "Виправлення оновлення станів подій з OpenAPI MQTT, покращена діагностика, нові стани для подій OpenAPI",
+        "zh-cn": "修复OpenAPI MQTT事件状态更新，改进诊断导出，添加OpenAPI事件原始数据状态"
+      },
       "0.0.1": {
         "en": "Initial alpha: Cloud API v2 device discovery, capability-based state generation, raw data logging for protocol research",
         "de": "Erstes Alpha: Cloud API v2 Geräte-Erkennung, Capability-basierte State-Generierung, Rohdaten-Logging für Protokoll-Forschung",
