@@ -1,0 +1,106 @@
+{
+  "common": {
+    "name": "govee-appliances",
+    "version": "0.0.1",
+    "news": {
+      "0.0.1": {
+        "en": "Initial alpha: Cloud API v2 device discovery, capability-based state generation, raw data logging for protocol research",
+        "de": "Erstes Alpha: Cloud API v2 Geräte-Erkennung, Capability-basierte State-Generierung, Rohdaten-Logging für Protokoll-Forschung",
+        "ru": "Начальная альфа: обнаружение устройств Cloud API v2, генерация состояний на основе возможностей, логирование сырых данных",
+        "pt": "Alfa inicial: descoberta de dispositivos Cloud API v2, geração de estados baseada em capacidades, logging de dados brutos",
+        "nl": "Eerste alpha: Cloud API v2 apparaatdetectie, capability-gebaseerde state-generatie, ruwe data logging",
+        "fr": "Alpha initial: découverte des appareils Cloud API v2, génération d'états basée sur les capacités, journalisation des données brutes",
+        "it": "Alpha iniziale: scoperta dispositivi Cloud API v2, generazione stati basata su capacità, logging dati grezzi",
+        "es": "Alpha inicial: descubrimiento de dispositivos Cloud API v2, generación de estados basada en capacidades, registro de datos brutos",
+        "pl": "Początkowa alfa: wykrywanie urządzeń Cloud API v2, generowanie stanów na podstawie możliwości, logowanie surowych danych",
+        "uk": "Початкова альфа: виявлення пристроїв Cloud API v2, генерація станів на основі можливостей, логування сирих даних",
+        "zh-cn": "初始Alpha：Cloud API v2设备发现，基于能力的状态生成，原始数据记录"
+      }
+    },
+    "titleLang": {
+      "en": "Govee Smart Appliances",
+      "de": "Govee Smart Appliances",
+      "ru": "Govee Smart Appliances",
+      "pt": "Govee Smart Appliances",
+      "nl": "Govee Smart Appliances",
+      "fr": "Govee Smart Appliances",
+      "it": "Govee Smart Appliances",
+      "es": "Govee Smart Appliances",
+      "pl": "Govee Smart Appliances",
+      "uk": "Govee Smart Appliances",
+      "zh-cn": "Govee Smart Appliances"
+    },
+    "desc": {
+      "en": "Control Govee smart home appliances (heaters, fans, humidifiers, purifiers, sensors) via Cloud API and MQTT",
+      "de": "Govee Smart-Home-Geräte (Heizung, Ventilator, Luftbefeuchter, Luftreiniger, Sensoren) über Cloud API und MQTT steuern",
+      "ru": "Управление умными бытовыми приборами Govee через Cloud API и MQTT",
+      "pt": "Controle eletrodomésticos inteligentes Govee via Cloud API e MQTT",
+      "nl": "Bedien Govee slimme huishoudelijke apparaten via Cloud API en MQTT",
+      "fr": "Contrôlez les appareils domestiques intelligents Govee via Cloud API et MQTT",
+      "it": "Controlla gli elettrodomestici intelligenti Govee tramite Cloud API e MQTT",
+      "es": "Controla los electrodomésticos inteligentes Govee a través de Cloud API y MQTT",
+      "pl": "Steruj inteligentnymi urządzeniami domowymi Govee przez Cloud API i MQTT",
+      "uk": "Керуйте розумними побутовими приладами Govee через Cloud API та MQTT",
+      "zh-cn": "通过Cloud API和MQTT控制Govee智能家电"
+    },
+    "authors": [
+      "krobi <krobi@power-dreams.com>"
+    ],
+    "licenseInformation": {
+      "license": "MIT",
+      "type": "free"
+    },
+    "platform": "Javascript/Node.js",
+    "icon": "govee-appliances.svg",
+    "extIcon": "https://raw.githubusercontent.com/krobipd/ioBroker.govee-appliances/main/admin/govee-appliances.svg",
+    "readme": "https://github.com/krobipd/ioBroker.govee-appliances/blob/main/README.md",
+    "enabled": true,
+    "tier": 3,
+    "loglevel": "info",
+    "mode": "daemon",
+    "keywords": [
+      "govee",
+      "goveelife",
+      "appliances",
+      "heater",
+      "humidifier",
+      "fan",
+      "purifier",
+      "sensor"
+    ],
+    "type": "household",
+    "compact": true,
+    "connectionType": "cloud",
+    "dataSource": "poll",
+    "adminUI": {
+      "config": "json"
+    },
+    "supportedMessages": {
+      "stopInstance": true
+    },
+    "dependencies": [
+      {
+        "js-controller": ">=7.0.0"
+      }
+    ],
+    "globalDependencies": [
+      {
+        "admin": ">=7.6.20"
+      }
+    ]
+  },
+  "encryptedNative": [
+    "apiKey",
+    "goveePassword"
+  ],
+  "protectedNative": [
+    "apiKey",
+    "goveePassword"
+  ],
+  "native": {
+    "apiKey": "",
+    "goveeEmail": "",
+    "goveePassword": "",
+    "pollInterval": 120
+  }
+}

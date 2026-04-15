@@ -1,0 +1,35 @@
+# macOS
+.DS_Store
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/settings.json
+*.swp
+*.swo
+
+# ioBroker repochecker
+.commitinfo
+
+# ioBroker
+admin/i18n/flat.txt
+
+# Build & Test
+build/src/
+build/test/
+coverage/
+.nyc_output/
+
+# Packages
+*.tgz
+
+# Dev server
+.dev-server/
+
+# Environment
+.env
+.env.local
