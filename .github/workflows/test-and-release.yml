@@ -4,9 +4,10 @@ on:
   push:
     branches:
       - main
-    tags:
-      - v[0-9]+.[0-9]+.[0-9]+
-      - v[0-9]+.[0-9]+.[0-9]+-**
+    # Tags disabled until npm package exists — enable when ready to publish
+    # tags:
+    #   - v[0-9]+.[0-9]+.[0-9]+
+    #   - v[0-9]+.[0-9]+.[0-9]+-**
   pull_request:
     branches:
       - main
