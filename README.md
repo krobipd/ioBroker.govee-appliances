@@ -160,6 +160,8 @@ If you find this adapter useful, consider supporting the development:
 
 ## Changelog
 
+### **WORK IN PROGRESS**
+
 ### 0.0.1 (2026-04-15)
 - Initial alpha release
 - Cloud API v2 device discovery and control
