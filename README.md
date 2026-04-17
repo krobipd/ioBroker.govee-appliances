@@ -162,6 +162,14 @@ If you find this adapter useful, consider supporting the development:
 
 ### **WORK IN PROGRESS**
 
+### 0.0.6 (2026-04-17)
+- Fix: every `cap.instance` access in capability-mapper now requires a string (previously crashed when Cloud API omitted instance)
+- Fix: temperature_setting field with missing `fieldName` no longer crashes
+- Fix: Cloud devices with missing/non-string `device` ID are now filtered out instead of crashing
+- Fix: `normalizeDeviceId` returns `""` for non-string input instead of throwing
+- Improvement: state values accept Cloud API string representations (`"1"`/`"0"`/`"true"`/`"75"`) instead of silently dropping them
+- Test: 32 new regression tests for API drift and type-coercion (234 total)
+
 ### 0.0.5 (2026-04-17)
 - Fix: prevent crash when Cloud API returns a capability without `parameters` (mapper now guards every `cap.parameters` access)
 - Test: regression coverage for missing `parameters` across all map functions

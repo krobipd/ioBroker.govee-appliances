@@ -152,7 +152,8 @@ export class DeviceManager {
       const cloudDevices = await this.cloudClient.getDevices();
       const appliances = cloudDevices.filter(
         (d) =>
-          typeof d.type === "string" &&
+          typeof d?.type === "string" &&
+          typeof d.device === "string" &&
           d.type.startsWith("devices.types.") &&
           !LIGHT_TYPES.includes(d.type),
       );

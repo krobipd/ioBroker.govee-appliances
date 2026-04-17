@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "govee-appliances",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "news": {
+      "0.0.6": {
+        "en": "Hardening: guard every Cloud API field that could be missing or of wrong type (instance, fieldName, device ID). Accept string booleans/numbers the Cloud API occasionally sends instead of silently dropping them.",
+        "de": "Härtung: jedes Cloud-API-Feld das fehlen oder den falschen Typ haben könnte (instance, fieldName, device ID) ist jetzt geprüft. String-Booleans/Zahlen die die Cloud-API manchmal schickt werden akzeptiert statt stillschweigend verloren zu gehen.",
+        "ru": "Упрочнение: проверка каждого поля Cloud API, которое может отсутствовать или быть неверного типа. Приём строковых булевых/числовых значений.",
+        "pt": "Robustez: cada campo da Cloud API que pode estar ausente ou com tipo errado é agora verificado. Aceita booleanos/números em string que a API envia ocasionalmente.",
+        "nl": "Harding: elk Cloud API-veld dat kan ontbreken of een verkeerd type kan hebben is nu gecontroleerd. Accepteert string-booleans/getallen.",
+        "fr": "Durcissement : chaque champ de la Cloud API pouvant être manquant ou de mauvais type est désormais vérifié. Accepte les booléens/nombres au format chaîne.",
+        "it": "Rafforzamento: ogni campo della Cloud API che potrebbe mancare o avere tipo sbagliato è ora controllato. Accetta booleani/numeri in formato stringa.",
+        "es": "Endurecimiento: cada campo de la Cloud API que puede faltar o tener tipo incorrecto se verifica ahora. Acepta booleanos/números en formato cadena.",
+        "pl": "Utwardzenie: każde pole Cloud API, które może być nieobecne lub mieć zły typ, jest teraz sprawdzane. Akceptuje ciągi z wartościami logicznymi/liczbowymi.",
+        "uk": "Зміцнення: кожне поле Cloud API, яке може бути відсутнім або мати неправильний тип, тепер перевіряється. Приймає рядкові булеві/числові значення.",
+        "zh-cn": "加固：对每个可能缺失或类型错误的 Cloud API 字段进行检查。接受偶尔发送的字符串布尔值/数字。"
+      },
       "0.0.5": {
         "en": "Bugfix: prevent crash when Cloud API returns capability without parameters",
         "de": "Bugfix: Crash verhindert wenn Cloud-API eine Capability ohne parameters liefert",

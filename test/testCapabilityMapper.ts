@@ -319,6 +319,75 @@ describe("CapabilityMapper", () => {
             const result = mapCapabilities(caps);
             expect(result).to.be.an("array");
         });
+
+        // Regression: any Cloud API drift must never crash the mapper.
+        it("should return [] for non-array input", () => {
+            expect(mapCapabilities(undefined as unknown as CloudCapability[])).to.deep.equal([]);
+            expect(mapCapabilities(null as unknown as CloudCapability[])).to.deep.equal([]);
+            expect(mapCapabilities("oops" as unknown as CloudCapability[])).to.deep.equal([]);
+        });
+
+        it("should skip capabilities with missing or non-string instance", () => {
+            const caps: CloudCapability[] = [
+                { type: "devices.capabilities.on_off" } as unknown as CloudCapability,
+                { type: "devices.capabilities.toggle", instance: 42 } as unknown as CloudCapability,
+                { type: "devices.capabilities.range", instance: null } as unknown as CloudCapability,
+                { type: "devices.capabilities.property", instance: undefined } as unknown as CloudCapability,
+                { type: "devices.capabilities.event", instance: {} } as unknown as CloudCapability,
+            ];
+            // Every one of these would previously crash inside sanitizeId/toLowerCase.
+            const result = mapCapabilities(caps);
+            expect(result).to.deep.equal([]);
+        });
+
+        it("should skip capabilities with missing or non-string type", () => {
+            const caps: CloudCapability[] = [
+                { instance: "powerSwitch" } as unknown as CloudCapability,
+                { type: 123, instance: "x" } as unknown as CloudCapability,
+                null as unknown as CloudCapability,
+                undefined as unknown as CloudCapability,
+            ];
+            expect(mapCapabilities(caps)).to.deep.equal([]);
+        });
+
+        it("should not throw on temperature_setting field with missing fieldName", () => {
+            // fieldName omitted — previously crashed on f.fieldName.toLowerCase()
+            const caps = [{
+                type: "devices.capabilities.temperature_setting",
+                instance: "targetTemperature",
+                parameters: {
+                    dataType: "STRUCT",
+                    fields: [
+                        { dataType: "INTEGER", range: { min: 0, max: 100, precision: 1 } },
+                    ],
+                },
+            }] as unknown as CloudCapability[];
+            expect(() => mapCapabilities(caps)).to.not.throw();
+        });
+
+        it("should not throw on work_mode option with missing value/name", () => {
+            const caps = [{
+                type: "devices.capabilities.work_mode",
+                instance: "workMode",
+                parameters: {
+                    dataType: "STRUCT",
+                    fields: [{
+                        fieldName: "workMode",
+                        dataType: "ENUM",
+                        options: [
+                            { name: "Good", value: 1 },
+                            { value: 2 },
+                            { name: "NoValue" },
+                        ],
+                    }],
+                },
+            }] as unknown as CloudCapability[];
+            expect(() => mapCapabilities(caps)).to.not.throw();
+        });
+
+        it("should return [] for empty capability array", () => {
+            expect(mapCapabilities([])).to.deep.equal([]);
+        });
     });
 
     describe("mapCloudStateValue", () => {
@@ -487,6 +556,195 @@ describe("CapabilityMapper", () => {
                 state: { value: 42 },
             };
             expect(mapCloudStateValue(cap)).to.have.lengthOf(0);
+        });
+
+        // Regression: Cloud API drift — missing/non-string fields must not crash.
+        it("should return [] for null/undefined capability", () => {
+            expect(mapCloudStateValue(null as unknown as CloudStateCapability)).to.deep.equal([]);
+            expect(mapCloudStateValue(undefined as unknown as CloudStateCapability)).to.deep.equal([]);
+        });
+
+        it("should return [] for capability with missing type", () => {
+            const cap = { instance: "x", state: { value: 1 } } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)).to.deep.equal([]);
+        });
+
+        it("should return [] for capability with missing instance", () => {
+            const cap = {
+                type: "devices.capabilities.toggle",
+                state: { value: 1 },
+            } as unknown as CloudStateCapability;
+            // Previously crashed: sanitizeId(undefined).replace(...)
+            expect(mapCloudStateValue(cap)).to.deep.equal([]);
+        });
+
+        it("should return [] for capability with non-string instance", () => {
+            const cap = {
+                type: "devices.capabilities.range",
+                instance: 42,
+                state: { value: 50 },
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)).to.deep.equal([]);
+        });
+
+        it("should return [] when state object is missing entirely", () => {
+            const cap = {
+                type: "devices.capabilities.on_off",
+                instance: "powerSwitch",
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)).to.deep.equal([]);
+        });
+
+        // Coercion: Govee sometimes sends strings where numbers/booleans are documented.
+        it("should accept on_off raw='1' as true (string)", () => {
+            const cap = {
+                type: "devices.capabilities.on_off",
+                instance: "powerSwitch",
+                state: { value: "1" },
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)[0]).to.deep.equal({ stateId: "power", value: true });
+        });
+
+        it("should accept on_off raw='true' as true (string)", () => {
+            const cap = {
+                type: "devices.capabilities.on_off",
+                instance: "powerSwitch",
+                state: { value: "true" },
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)[0]).to.deep.equal({ stateId: "power", value: true });
+        });
+
+        it("should treat on_off raw='0' as false", () => {
+            const cap = {
+                type: "devices.capabilities.on_off",
+                instance: "powerSwitch",
+                state: { value: "0" },
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)[0]).to.deep.equal({ stateId: "power", value: false });
+        });
+
+        it("should accept toggle raw='1' as true", () => {
+            const cap = {
+                type: "devices.capabilities.toggle",
+                instance: "oscillationToggle",
+                state: { value: "1" },
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)[0].value).to.equal(true);
+        });
+
+        it("should accept event raw='1' as true", () => {
+            const cap = {
+                type: "devices.capabilities.event",
+                instance: "iceFull",
+                state: { value: "1" },
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)[0].value).to.equal(true);
+        });
+
+        it("should accept online raw='true' as true", () => {
+            const cap = {
+                type: "devices.capabilities.online",
+                instance: "online",
+                state: { value: "true" },
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)[0]).to.deep.equal({ stateId: "online", value: true });
+        });
+
+        it("should coerce range string number to number", () => {
+            const cap = {
+                type: "devices.capabilities.range",
+                instance: "brightness",
+                state: { value: "75" },
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)[0]).to.deep.equal({ stateId: "brightness", value: 75 });
+        });
+
+        it("should drop range when value is non-numeric string", () => {
+            const cap = {
+                type: "devices.capabilities.range",
+                instance: "brightness",
+                state: { value: "abc" },
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)).to.deep.equal([]);
+        });
+
+        it("should coerce property string number to number", () => {
+            const cap = {
+                type: "devices.capabilities.property",
+                instance: "sensorTemperature",
+                state: { value: "22.5" },
+            } as unknown as CloudStateCapability;
+            const result = mapCloudStateValue(cap);
+            expect(result).to.have.lengthOf(1);
+            expect(result[0].value).to.equal(22.5);
+            expect(result[0].channel).to.equal("sensor");
+        });
+
+        it("should drop property when value is non-numeric", () => {
+            const cap = {
+                type: "devices.capabilities.property",
+                instance: "sensorTemperature",
+                state: { value: "n/a" },
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)).to.deep.equal([]);
+        });
+
+        it("should coerce color_temperature string to number", () => {
+            const cap = {
+                type: "devices.capabilities.color_setting",
+                instance: "colorTemperatureK",
+                state: { value: "5000" },
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)[0]).to.deep.equal({ stateId: "color_temperature", value: 5000 });
+        });
+
+        it("should coerce work_mode struct with string numbers", () => {
+            const cap = {
+                type: "devices.capabilities.work_mode",
+                instance: "workMode",
+                state: { value: { workMode: "1", modeValue: "5" } },
+            } as unknown as CloudStateCapability;
+            const result = mapCloudStateValue(cap);
+            expect(result).to.deep.equal([
+                { stateId: "work_mode", value: 1 },
+                { stateId: "mode_value", value: 5 },
+            ]);
+        });
+
+        it("should skip work_mode struct fields that are non-numeric", () => {
+            const cap = {
+                type: "devices.capabilities.work_mode",
+                instance: "workMode",
+                state: { value: { workMode: "garbage" } },
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)).to.deep.equal([]);
+        });
+
+        it("should coerce temperature_setting string value", () => {
+            const cap = {
+                type: "devices.capabilities.temperature_setting",
+                instance: "targetTemperature",
+                state: { value: "75" },
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)[0]).to.deep.equal({ stateId: "target_temperature", value: 75 });
+        });
+
+        it("should coerce temperature_setting struct with string targetTemperature", () => {
+            const cap = {
+                type: "devices.capabilities.temperature_setting",
+                instance: "targetTemperature",
+                state: { value: { targetTemperature: "72.5" } },
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)[0]).to.deep.equal({ stateId: "target_temperature", value: 72.5 });
+        });
+
+        it("should drop temperature_setting when no numeric value present", () => {
+            const cap = {
+                type: "devices.capabilities.temperature_setting",
+                instance: "targetTemperature",
+                state: { value: { someField: "x" } },
+            } as unknown as CloudStateCapability;
+            expect(mapCloudStateValue(cap)).to.deep.equal([]);
         });
     });
 

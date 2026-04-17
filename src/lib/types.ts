@@ -228,11 +228,15 @@ export interface ApplianceDevice {
 // --- Shared Utilities ---
 
 /**
- * Normalize device ID — remove colons, lowercase
+ * Normalize device ID — remove colons, lowercase.
+ * Returns "" if id is not a string (Cloud API drift safety).
  *
  * @param id Identifier string
  */
 export function normalizeDeviceId(id: string): string {
+  if (typeof id !== "string") {
+    return "";
+  }
   return id.replace(/:/g, "").toLowerCase();
 }
 
@@ -310,6 +314,7 @@ export interface TimerAdapter {
 
 /**
  * Extract short ID from device ID (last 4 hex chars).
+ * Returns "" for invalid input — keeps caller from constructing broken folder names.
  *
  * @param deviceId Device identifier
  */

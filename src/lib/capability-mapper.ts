@@ -36,6 +36,35 @@ export interface StateDefinition {
 }
 
 /**
+ * Coerce a Cloud API value to boolean. Accepts "1"/"0"/"true"/"false" strings
+ * because Govee sometimes returns booleans as strings or 0/1 as strings.
+ *
+ * @param v Raw value from Cloud API
+ */
+function coerceBool(v: unknown): boolean {
+  return v === true || v === 1 || v === "1" || v === "true";
+}
+
+/**
+ * Coerce a Cloud API value to number. Accepts numeric strings
+ * ("25.5" → 25.5). Returns null for non-numeric input.
+ *
+ * @param v Raw value from Cloud API
+ */
+function coerceNum(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) {
+    return v;
+  }
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v);
+    if (Number.isFinite(n)) {
+      return n;
+    }
+  }
+  return null;
+}
+
+/**
  * Maps Govee Cloud API capabilities to ioBroker state definitions.
  * Pure function — no side effects, easily testable.
  *
@@ -44,6 +73,9 @@ export interface StateDefinition {
 export function mapCapabilities(
   capabilities: CloudCapability[],
 ): StateDefinition[] {
+  if (!Array.isArray(capabilities)) {
+    return [];
+  }
   const states: StateDefinition[] = [];
 
   for (const cap of capabilities) {
@@ -174,7 +206,7 @@ export function buildDeviceStateDefs(
  * @param cap Cloud capability to map
  */
 function mapSingleCapability(cap: CloudCapability): StateDefinition[] | null {
-  if (typeof cap?.type !== "string") {
+  if (typeof cap?.type !== "string" || typeof cap.instance !== "string") {
     return null;
   }
   const shortType = cap.type.replace("devices.capabilities.", "");
@@ -400,11 +432,15 @@ function mapTemperatureSetting(cap: CloudCapability): StateDefinition[] {
   // Try to find targetTemperature field in STRUCT
   const fields = cap.parameters?.fields;
   if (fields && fields.length > 0) {
-    const tempField = fields.find(
-      (f) =>
-        f.fieldName === "targetTemperature" ||
-        f.fieldName.toLowerCase().includes("temperature"),
-    );
+    const tempField = fields.find((f) => {
+      if (f.fieldName === "targetTemperature") {
+        return true;
+      }
+      if (typeof f.fieldName !== "string") {
+        return false;
+      }
+      return f.fieldName.toLowerCase().includes("temperature");
+    });
     if (tempField?.range) {
       const unit = normalizeUnit(cap.parameters?.unit) ?? "°F";
       return [
@@ -587,7 +623,7 @@ export interface CloudStateValue {
 export function mapCloudStateValue(
   cap: CloudStateCapability,
 ): CloudStateValue[] {
-  if (typeof cap?.type !== "string") {
+  if (typeof cap?.type !== "string" || typeof cap.instance !== "string") {
     return [];
   }
   const shortType = cap.type.replace("devices.capabilities.", "");
@@ -598,18 +634,23 @@ export function mapCloudStateValue(
 
   switch (shortType) {
     case "on_off":
-      return [{ stateId: "power", value: raw === 1 || raw === true }];
+      return [{ stateId: "power", value: coerceBool(raw) }];
 
     case "toggle":
       return [
         {
           stateId: sanitizeId(cap.instance),
-          value: raw === 1 || raw === true,
+          value: coerceBool(raw),
         },
       ];
 
-    case "range":
-      return [{ stateId: sanitizeId(cap.instance), value: raw as number }];
+    case "range": {
+      const num = coerceNum(raw);
+      if (num === null) {
+        return [];
+      }
+      return [{ stateId: sanitizeId(cap.instance), value: num }];
+    }
 
     case "work_mode":
       return mapWorkModeState(raw);
@@ -619,7 +660,7 @@ export function mapCloudStateValue(
 
     case "color_setting":
       if (cap.instance === "colorRgb") {
-        const num = typeof raw === "number" ? raw : 0;
+        const num = coerceNum(raw) ?? 0;
         return [
           {
             stateId: "color_rgb",
@@ -628,7 +669,11 @@ export function mapCloudStateValue(
         ];
       }
       if (cap.instance.includes("colorTem")) {
-        return [{ stateId: "color_temperature", value: raw as number }];
+        const num = coerceNum(raw);
+        if (num === null) {
+          return [];
+        }
+        return [{ stateId: "color_temperature", value: num }];
       }
       return [];
 
@@ -643,26 +688,31 @@ export function mapCloudStateValue(
         },
       ];
 
-    case "property":
+    case "property": {
+      const num = coerceNum(raw);
+      if (num === null) {
+        return [];
+      }
       return [
         {
           stateId: sanitizeId(cap.instance),
-          value: raw as number,
+          value: num,
           channel: "sensor",
         },
       ];
+    }
 
     case "event":
       return [
         {
           stateId: sanitizeId(cap.instance),
-          value: raw === 1 || raw === true,
+          value: coerceBool(raw),
           channel: "events",
         },
       ];
 
     case "online":
-      return [{ stateId: "online", value: raw === true || raw === 1 }];
+      return [{ stateId: "online", value: coerceBool(raw) }];
 
     default:
       return [];
@@ -683,16 +733,16 @@ function mapWorkModeState(raw: unknown): CloudStateValue[] {
   const results: CloudStateValue[] = [];
 
   if ("workMode" in struct && struct.workMode !== undefined) {
-    results.push({
-      stateId: "work_mode",
-      value: struct.workMode as number,
-    });
+    const n = coerceNum(struct.workMode);
+    if (n !== null) {
+      results.push({ stateId: "work_mode", value: n });
+    }
   }
   if ("modeValue" in struct && struct.modeValue !== undefined) {
-    results.push({
-      stateId: "mode_value",
-      value: struct.modeValue as number,
-    });
+    const n = coerceNum(struct.modeValue);
+    if (n !== null) {
+      results.push({ stateId: "mode_value", value: n });
+    }
   }
 
   return results;
@@ -704,14 +754,16 @@ function mapWorkModeState(raw: unknown): CloudStateValue[] {
  * @param raw Raw state value
  */
 function mapTemperatureSettingState(raw: unknown): CloudStateValue[] {
-  if (typeof raw === "number") {
-    return [{ stateId: "target_temperature", value: raw }];
+  const direct = coerceNum(raw);
+  if (direct !== null) {
+    return [{ stateId: "target_temperature", value: direct }];
   }
   if (typeof raw === "object" && raw !== null) {
     const struct = raw as Record<string, unknown>;
     const temp = struct.targetTemperature ?? struct.temperature ?? struct.temp;
-    if (typeof temp === "number") {
-      return [{ stateId: "target_temperature", value: temp }];
+    const n = coerceNum(temp);
+    if (n !== null) {
+      return [{ stateId: "target_temperature", value: n }];
     }
   }
   return [];

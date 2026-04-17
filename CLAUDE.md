@@ -6,10 +6,10 @@
 
 **ioBroker Govee Appliances Adapter** — Steuert Govee Non-Lighting-Geräte (Heater, Fan, Humidifier, Purifier, Sensoren etc.) via Cloud API v2 + optional AWS IoT MQTT.
 
-- **Version:** 0.0.5 (Alpha, April 2026) — 202 Tests, Build+Lint sauber, KEIN npm
+- **Version:** 0.0.6 (Alpha, April 2026) — 234 Tests, Build+Lint sauber, KEIN npm
 - **GitHub:** https://github.com/krobipd/ioBroker.govee-appliances
 - **Runtime-Deps:** `@iobroker/adapter-core`, `@iobroker/types`, `mqtt`, `node-forge`
-- **Hotfixes 0.0.2 → 0.0.5:** BaseGroup-Filter, async-handler crash-loop fix, Type-Guards für API-Drift, in-memory state cache, dead-code removal, capability-mapper guards für fehlende `parameters`
+- **Hotfixes 0.0.2 → 0.0.6:** BaseGroup-Filter, async-handler crash-loop fix, Type-Guards für API-Drift, in-memory state cache, dead-code removal, capability-mapper guards für fehlende `parameters`, vollständige API-Drift-Härtung (instance/fieldName/device-ID guards + String-zu-Number/Bool-Coercion)
 
 ## Scope
 

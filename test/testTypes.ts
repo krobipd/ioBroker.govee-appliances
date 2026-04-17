@@ -24,6 +24,19 @@ describe("Types utilities", () => {
         it("should handle empty string", () => {
             expect(normalizeDeviceId("")).to.equal("");
         });
+
+        // Regression: Cloud API drift — non-string device IDs must not crash.
+        it("should return '' for undefined", () => {
+            expect(normalizeDeviceId(undefined as unknown as string)).to.equal("");
+        });
+
+        it("should return '' for null", () => {
+            expect(normalizeDeviceId(null as unknown as string)).to.equal("");
+        });
+
+        it("should return '' for numeric input", () => {
+            expect(normalizeDeviceId(12345 as unknown as string)).to.equal("");
+        });
     });
 
     describe("shortDeviceId", () => {

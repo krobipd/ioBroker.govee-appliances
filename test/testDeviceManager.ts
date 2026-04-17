@@ -164,6 +164,68 @@ describe("DeviceManager", () => {
             expect(dm.getAllDevices()[0].sku).to.equal("H7131");
         });
 
+        // Regression: Cloud API drift — malformed device entries must not crash or be loaded.
+        it("should skip cloud devices with missing or non-string device ID", async () => {
+            const dm = new DeviceManager(mockLog);
+            const cloudDevices = [
+                {
+                    sku: "H7131",
+                    device: "AA:BB:CC:DD:11:22:33:44",
+                    deviceName: "Valid",
+                    type: "devices.types.heater",
+                    capabilities: [],
+                },
+                {
+                    sku: "H7131",
+                    // device field missing entirely — previously crashed normalizeDeviceId
+                    deviceName: "Broken 1",
+                    type: "devices.types.heater",
+                    capabilities: [],
+                },
+                {
+                    sku: "H7131",
+                    device: 12345, // non-string
+                    deviceName: "Broken 2",
+                    type: "devices.types.heater",
+                    capabilities: [],
+                },
+            ] as unknown as CloudDevice[];
+
+            dm.setCloudClient({
+                getDevices: async () => cloudDevices,
+            } as any);
+            dm.setSkuCache({
+                loadAll: () => [],
+                save: () => {},
+                clear: () => {},
+            } as any);
+
+            await dm.loadFromCloud();
+
+            expect(dm.getAllDevices()).to.have.lengthOf(1);
+            expect(dm.getAllDevices()[0].name).to.equal("Valid");
+        });
+
+        it("should skip cloud devices with missing or non-string type", async () => {
+            const dm = new DeviceManager(mockLog);
+            const cloudDevices = [
+                { sku: "H7131", device: "AA:BB:CC:DD:11:22:33:44", deviceName: "X1", capabilities: [] },
+                { sku: "H7131", device: "AA:BB:CC:DD:11:22:33:45", deviceName: "X2", type: 123, capabilities: [] },
+            ] as unknown as CloudDevice[];
+
+            dm.setCloudClient({
+                getDevices: async () => cloudDevices,
+            } as any);
+            dm.setSkuCache({
+                loadAll: () => [],
+                save: () => {},
+                clear: () => {},
+            } as any);
+
+            await dm.loadFromCloud();
+            expect(dm.getAllDevices()).to.have.lengthOf(0);
+        });
+
         it("should update existing device from Cloud", async () => {
             const dm = new DeviceManager(mockLog);
 
