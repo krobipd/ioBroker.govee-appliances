@@ -127,6 +127,9 @@ function buildDeviceStateDefs(device) {
   return stateDefs;
 }
 function mapSingleCapability(cap) {
+  if (typeof (cap == null ? void 0 : cap.type) !== "string") {
+    return null;
+  }
   const shortType = cap.type.replace("devices.capabilities.", "");
   switch (shortType) {
     case "on_off":
@@ -436,6 +439,9 @@ function mapEvent(cap) {
 }
 function mapCloudStateValue(cap) {
   var _a;
+  if (typeof (cap == null ? void 0 : cap.type) !== "string") {
+    return [];
+  }
   const shortType = cap.type.replace("devices.capabilities.", "");
   const raw = (_a = cap.state) == null ? void 0 : _a.value;
   if (raw === void 0 || raw === null) {

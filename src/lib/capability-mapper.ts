@@ -174,6 +174,9 @@ export function buildDeviceStateDefs(
  * @param cap Cloud capability to map
  */
 function mapSingleCapability(cap: CloudCapability): StateDefinition[] | null {
+  if (typeof cap?.type !== "string") {
+    return null;
+  }
   const shortType = cap.type.replace("devices.capabilities.", "");
 
   switch (shortType) {
@@ -582,6 +585,9 @@ export interface CloudStateValue {
 export function mapCloudStateValue(
   cap: CloudStateCapability,
 ): CloudStateValue[] {
+  if (typeof cap?.type !== "string") {
+    return [];
+  }
   const shortType = cap.type.replace("devices.capabilities.", "");
   const raw = cap.state?.value;
   if (raw === undefined || raw === null) {

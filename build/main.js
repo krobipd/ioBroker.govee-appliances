@@ -46,9 +46,28 @@ class GoveeAppliancesAdapter extends utils.Adapter {
   siblingActive = false;
   constructor(options = {}) {
     super({ ...options, name: "govee-appliances" });
-    this.on("ready", () => this.onReady());
-    this.on("stateChange", (id, state) => this.onStateChange(id, state));
+    this.on("ready", () => {
+      this.onReady().catch((err) => {
+        var _a;
+        this.log.error(
+          `onReady failed: ${err instanceof Error ? (_a = err.stack) != null ? _a : err.message : String(err)}`
+        );
+      });
+    });
+    this.on("stateChange", (id, state) => {
+      this.onStateChange(id, state).catch((err) => {
+        this.log.error(
+          `onStateChange failed: ${err instanceof Error ? err.message : String(err)}`
+        );
+      });
+    });
     this.on("unload", (callback) => this.onUnload(callback));
+    process.on("unhandledRejection", (reason) => {
+      var _a;
+      this.log.error(
+        `Unhandled promise rejection: ${reason instanceof Error ? (_a = reason.stack) != null ? _a : reason.message : String(reason)}`
+      );
+    });
   }
   /** Adapter started — initialize all channels */
   async onReady() {
@@ -408,7 +427,7 @@ class GoveeAppliancesAdapter extends utils.Adapter {
   }
   /** Log ready message with device summary */
   logReady() {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     if (this.readyLogged) {
       return;
     }
@@ -422,8 +441,11 @@ class GoveeAppliancesAdapter extends utils.Adapter {
     } else {
       const types = /* @__PURE__ */ new Map();
       for (const d of devices) {
-        const shortType = d.type.replace("devices.types.", "");
-        types.set(shortType, ((_c = types.get(shortType)) != null ? _c : 0) + 1);
+        const shortType = ((_c = d.type) != null ? _c : "unknown").replace(
+          "devices.types.",
+          ""
+        );
+        types.set(shortType, ((_d = types.get(shortType)) != null ? _d : 0) + 1);
       }
       const summary = Array.from(types.entries()).map(([t, c]) => `${c}\xD7 ${t}`).join(", ");
       this.log.info(

@@ -151,7 +151,10 @@ export class DeviceManager {
       this.rateLimiter?.recordCall();
       const cloudDevices = await this.cloudClient.getDevices();
       const appliances = cloudDevices.filter(
-        (d) => !LIGHT_TYPES.includes(d.type),
+        (d) =>
+          typeof d.type === "string" &&
+          d.type.startsWith("devices.types.") &&
+          !LIGHT_TYPES.includes(d.type),
       );
 
       this.log.debug(

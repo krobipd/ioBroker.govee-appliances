@@ -168,6 +168,9 @@ If you find this adapter useful, consider supporting the development:
 - Fix: Discovery rate-limit budget no longer skipped at startup
 - Fix: `info.online` reference exists before device object is created
 - Fix: AWS IoT MQTT no longer reconnects after max auth failures
+- Fix: Filter out light groups (BaseGroup) from appliance discovery
+- Fix: Adapter no longer crashes on unexpected capability shapes
+- Fix: Unhandled rejections in onReady/onStateChange logged instead of crashing
 - Performance: in-memory state cache replaces per-update object DB lookup
 - Performance: Cache writes only when device data actually changed
 - Removed unused dynamic_scene mapping, sku-cache `clear()`, and pseudo-capability MQTT forwarding

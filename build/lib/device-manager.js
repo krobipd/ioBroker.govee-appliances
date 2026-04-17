@@ -134,7 +134,7 @@ class DeviceManager {
       (_a = this.rateLimiter) == null ? void 0 : _a.recordCall();
       const cloudDevices = await this.cloudClient.getDevices();
       const appliances = cloudDevices.filter(
-        (d) => !import_types.LIGHT_TYPES.includes(d.type)
+        (d) => typeof d.type === "string" && d.type.startsWith("devices.types.") && !import_types.LIGHT_TYPES.includes(d.type)
       );
       this.log.debug(
         `Cloud: ${cloudDevices.length} devices total, ${appliances.length} appliances`
