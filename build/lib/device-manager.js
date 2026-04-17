@@ -126,11 +126,12 @@ class DeviceManager {
    * Filters out light devices — those belong to govee-smart.
    */
   async loadFromCloud() {
-    var _a;
+    var _a, _b;
     if (!this.cloudClient) {
       return;
     }
     try {
+      (_a = this.rateLimiter) == null ? void 0 : _a.recordCall();
       const cloudDevices = await this.cloudClient.getDevices();
       const appliances = cloudDevices.filter(
         (d) => !import_types.LIGHT_TYPES.includes(d.type)
@@ -142,15 +143,22 @@ class DeviceManager {
       for (const cd of appliances) {
         const key = (0, import_types.normalizeDeviceId)(cd.device);
         const existing = this.devices.get(key);
+        let changed = false;
         if (existing) {
-          existing.name = cd.deviceName;
-          existing.type = cd.type;
-          existing.capabilities = cd.capabilities;
+          if (existing.name !== cd.deviceName || existing.type !== cd.type || JSON.stringify(existing.capabilities) !== JSON.stringify(cd.capabilities)) {
+            existing.name = cd.deviceName;
+            existing.type = cd.type;
+            existing.capabilities = cd.capabilities;
+            changed = true;
+          }
         } else {
           this.devices.set(key, this.cloudToDevice(cd));
           newCount++;
+          changed = true;
         }
-        this.cacheDevice(key);
+        if (changed) {
+          this.cacheDevice(key);
+        }
       }
       if (newCount > 0) {
         this.log.debug(`Cloud: ${newCount} new appliances discovered`);
@@ -159,7 +167,7 @@ class DeviceManager {
         this.log.info("Cloud API connection restored");
         this.lastErrorCategory = null;
       }
-      (_a = this.onDeviceListChanged) == null ? void 0 : _a.call(this, this.getAllDevices());
+      (_b = this.onDeviceListChanged) == null ? void 0 : _b.call(this, this.getAllDevices());
     } catch (err) {
       const category = (0, import_types.classifyError)(err);
       const msg = `Cloud API error: ${err instanceof Error ? err.message : String(err)}`;
@@ -196,13 +204,14 @@ class DeviceManager {
   }
   /**
    * Handle MQTT status update for a device.
+   * Stores raw state internally; we don't translate MQTT keys to ioBroker
+   * states because the MQTT payload format isn't documented for appliances.
+   * Cloud polling remains the source of truth for state values.
    *
    * @param update MQTT status update
    */
   handleMqttStatus(update) {
-    var _a;
-    const key = (0, import_types.normalizeDeviceId)(update.device);
-    const device = this.devices.get(key);
+    const device = this.devices.get((0, import_types.normalizeDeviceId)(update.device));
     if (!device) {
       this.log.debug(
         `MQTT status for unknown device: ${update.sku} ${update.device}`
@@ -211,19 +220,6 @@ class DeviceManager {
     }
     if (update.state) {
       Object.assign(device.state, update.state);
-    }
-    const caps = [];
-    if (update.state) {
-      for (const [key2, value] of Object.entries(update.state)) {
-        caps.push({
-          type: `devices.capabilities.${this.guessCapabilityType(key2)}`,
-          instance: key2,
-          state: { value }
-        });
-      }
-    }
-    if (caps.length > 0) {
-      (_a = this.onDeviceUpdate) == null ? void 0 : _a.call(this, device, caps);
     }
   }
   /**
@@ -277,11 +273,10 @@ class DeviceManager {
   /**
    * Store raw BLE packets from MQTT for research.
    *
-   * @param _sku Product model (unused)
    * @param deviceId Device identifier
    * @param packets BLE packet data
    */
-  handleRawPackets(_sku, deviceId, packets) {
+  handleRawPackets(deviceId, packets) {
     const key = (0, import_types.normalizeDeviceId)(deviceId);
     const device = this.devices.get(key);
     if (!device) {
@@ -414,28 +409,6 @@ class DeviceManager {
       cachedAt: Date.now()
     };
     this.skuCache.save(data);
-  }
-  /**
-   * Guess capability type from MQTT state key.
-   * MQTT sends raw state keys without full capability type prefix.
-   *
-   * @param key Device key
-   */
-  guessCapabilityType(key) {
-    const k = key.toLowerCase();
-    if (k === "onoff" || k === "powerswitch") {
-      return "on_off";
-    }
-    if (k.includes("temperature")) {
-      return "property";
-    }
-    if (k.includes("humidity")) {
-      return "property";
-    }
-    if (k.includes("mode")) {
-      return "work_mode";
-    }
-    return "property";
   }
 }
 // Annotate the CommonJS export names for ESM import in node:

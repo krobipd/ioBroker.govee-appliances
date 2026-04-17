@@ -171,21 +171,6 @@ function mapSingleCapability(cap) {
       return mapEvent(cap);
     case "online":
       return null;
-    case "dynamic_scene": {
-      const id = sanitizeId(cap.instance);
-      return [
-        {
-          id,
-          name: humanize(cap.instance),
-          type: "string",
-          role: "json",
-          write: true,
-          def: "",
-          capabilityType: cap.type,
-          capabilityInstance: cap.instance
-        }
-      ];
-    }
     default:
       return null;
   }
@@ -458,9 +443,14 @@ function mapCloudStateValue(cap) {
   }
   switch (shortType) {
     case "on_off":
-      return [{ stateId: "power", value: raw === 1 }];
+      return [{ stateId: "power", value: raw === 1 || raw === true }];
     case "toggle":
-      return [{ stateId: sanitizeId(cap.instance), value: raw === 1 }];
+      return [
+        {
+          stateId: sanitizeId(cap.instance),
+          value: raw === 1 || raw === true
+        }
+      ];
     case "range":
       return [{ stateId: sanitizeId(cap.instance), value: raw }];
     case "work_mode":

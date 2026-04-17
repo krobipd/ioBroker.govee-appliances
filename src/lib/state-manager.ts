@@ -18,6 +18,8 @@ export class StateManager {
   private readonly adapter: utils.AdapterInstance;
   /** Maps "prefix.stateId" → channel name (populated during createDeviceStates) */
   private readonly stateChannelMap = new Map<string, string>();
+  /** Local IDs of states known to exist (avoids per-update getObjectAsync) */
+  private readonly knownStates = new Set<string>();
 
   /** @param adapter The ioBroker adapter instance */
   constructor(adapter: utils.AdapterInstance) {
@@ -49,22 +51,7 @@ export class StateManager {
   ): Promise<void> {
     const prefix = this.devicePrefix(device);
 
-    // Device object
-    await this.adapter.extendObjectAsync(prefix, {
-      type: "device",
-      common: {
-        name: device.name,
-        statusStates: {
-          onlineId: `${this.adapter.namespace}.${prefix}.info.online`,
-        },
-      } as ioBroker.DeviceCommon,
-      native: {
-        sku: device.sku,
-        deviceId: device.deviceId,
-      },
-    });
-
-    // Info channel
+    // Info channel + states first — referenced by statusStates.onlineId below
     await this.adapter.extendObjectAsync(`${prefix}.info`, {
       type: "channel",
       common: { name: "Device Information" },
@@ -105,6 +92,21 @@ export class StateManager {
     await this.adapter.setStateAsync(`${prefix}.info.online`, {
       val: device.online,
       ack: true,
+    });
+
+    // Device object — info.online now exists when statusStates references it
+    await this.adapter.extendObjectAsync(prefix, {
+      type: "device",
+      common: {
+        name: device.name,
+        statusStates: {
+          onlineId: `${this.adapter.namespace}.${prefix}.info.online`,
+        },
+      } as ioBroker.DeviceCommon,
+      native: {
+        sku: device.sku,
+        deviceId: device.deviceId,
+      },
     });
 
     // Group state defs by channel
@@ -155,7 +157,8 @@ export class StateManager {
           common.def = def.def;
         }
 
-        await this.adapter.extendObjectAsync(`${prefix}.${channel}.${def.id}`, {
+        const fullId = `${prefix}.${channel}.${def.id}`;
+        await this.adapter.extendObjectAsync(fullId, {
           type: "state",
           common: common as ioBroker.StateCommon,
           native: {
@@ -163,6 +166,7 @@ export class StateManager {
             capabilityInstance: def.capabilityInstance,
           },
         });
+        this.knownStates.add(fullId);
 
         // Initialize state with default value if not yet set
         if (def.def !== undefined) {
@@ -209,17 +213,6 @@ export class StateManager {
       const fullPath = this.resolveStatePath(prefix, v.stateId);
       await this.setStateIfExists(fullPath, v.value);
     }
-  }
-
-  /**
-   * Update the online state for a device.
-   *
-   * @param device Appliance device
-   * @param online Online status
-   */
-  async updateOnline(device: ApplianceDevice, online: boolean): Promise<void> {
-    const prefix = this.devicePrefix(device);
-    await this.setStateIfExists(`${prefix}.info.online`, online);
   }
 
   /**
@@ -306,6 +299,11 @@ export class StateManager {
       if (!currentPrefixes.has(localId)) {
         this.adapter.log.debug(`Removing stale device: ${localId}`);
         await this.adapter.delObjectAsync(localId, { recursive: true });
+        for (const stateId of this.knownStates) {
+          if (stateId.startsWith(`${localId}.`)) {
+            this.knownStates.delete(stateId);
+          }
+        }
       }
     }
   }
@@ -362,6 +360,7 @@ export class StateManager {
           this.adapter.log.debug(`Removing stale state: ${localId}`);
           await this.adapter.delObjectAsync(localId);
           await this.adapter.delStateAsync(localId).catch(() => {});
+          this.knownStates.delete(localId);
           deleted++;
         }
       }
@@ -397,10 +396,13 @@ export class StateManager {
       common: { name, type, role, read: true, write } as ioBroker.StateCommon,
       native: {},
     });
+    this.knownStates.add(id);
   }
 
   /**
-   * Set state value only if the object exists
+   * Set state value only if the object exists.
+   * Uses an in-memory cache populated during createDeviceStates to avoid
+   * hitting the object DB on every update.
    *
    * @param id Identifier string
    * @param value Value to send
@@ -409,9 +411,9 @@ export class StateManager {
     id: string,
     value: ioBroker.StateValue,
   ): Promise<void> {
-    const obj = await this.adapter.getObjectAsync(id);
-    if (obj) {
-      await this.adapter.setStateAsync(id, { val: value, ack: true });
+    if (!this.knownStates.has(id)) {
+      return;
     }
+    await this.adapter.setStateAsync(id, { val: value, ack: true });
   }
 }

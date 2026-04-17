@@ -1,6 +1,6 @@
 {
   "name": "iobroker.govee-appliances",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Control Govee smart home appliances via Cloud API and MQTT",
   "author": {
     "name": "krobi",

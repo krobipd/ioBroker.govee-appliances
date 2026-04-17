@@ -33,6 +33,8 @@ class StateManager {
   adapter;
   /** Maps "prefix.stateId" → channel name (populated during createDeviceStates) */
   stateChannelMap = /* @__PURE__ */ new Map();
+  /** Local IDs of states known to exist (avoids per-update getObjectAsync) */
+  knownStates = /* @__PURE__ */ new Set();
   /** @param adapter The ioBroker adapter instance */
   constructor(adapter) {
     this.adapter = adapter;
@@ -58,19 +60,6 @@ class StateManager {
   async createDeviceStates(device, stateDefs) {
     var _a, _b;
     const prefix = this.devicePrefix(device);
-    await this.adapter.extendObjectAsync(prefix, {
-      type: "device",
-      common: {
-        name: device.name,
-        statusStates: {
-          onlineId: `${this.adapter.namespace}.${prefix}.info.online`
-        }
-      },
-      native: {
-        sku: device.sku,
-        deviceId: device.deviceId
-      }
-    });
     await this.adapter.extendObjectAsync(`${prefix}.info`, {
       type: "channel",
       common: { name: "Device Information" },
@@ -108,6 +97,19 @@ class StateManager {
     await this.adapter.setStateAsync(`${prefix}.info.online`, {
       val: device.online,
       ack: true
+    });
+    await this.adapter.extendObjectAsync(prefix, {
+      type: "device",
+      common: {
+        name: device.name,
+        statusStates: {
+          onlineId: `${this.adapter.namespace}.${prefix}.info.online`
+        }
+      },
+      native: {
+        sku: device.sku,
+        deviceId: device.deviceId
+      }
     });
     const channelGroups = /* @__PURE__ */ new Map();
     for (const def of stateDefs) {
@@ -150,7 +152,8 @@ class StateManager {
         if (def.def !== void 0) {
           common.def = def.def;
         }
-        await this.adapter.extendObjectAsync(`${prefix}.${channel}.${def.id}`, {
+        const fullId = `${prefix}.${channel}.${def.id}`;
+        await this.adapter.extendObjectAsync(fullId, {
           type: "state",
           common,
           native: {
@@ -158,6 +161,7 @@ class StateManager {
             capabilityInstance: def.capabilityInstance
           }
         });
+        this.knownStates.add(fullId);
         if (def.def !== void 0) {
           const current = await this.adapter.getStateAsync(
             `${prefix}.${channel}.${def.id}`
@@ -194,16 +198,6 @@ class StateManager {
       const fullPath = this.resolveStatePath(prefix, v.stateId);
       await this.setStateIfExists(fullPath, v.value);
     }
-  }
-  /**
-   * Update the online state for a device.
-   *
-   * @param device Appliance device
-   * @param online Online status
-   */
-  async updateOnline(device, online) {
-    const prefix = this.devicePrefix(device);
-    await this.setStateIfExists(`${prefix}.info.online`, online);
   }
   /**
    * Update raw MQTT packet data for a device.
@@ -279,6 +273,11 @@ class StateManager {
       if (!currentPrefixes.has(localId)) {
         this.adapter.log.debug(`Removing stale device: ${localId}`);
         await this.adapter.delObjectAsync(localId, { recursive: true });
+        for (const stateId of this.knownStates) {
+          if (stateId.startsWith(`${localId}.`)) {
+            this.knownStates.delete(stateId);
+          }
+        }
       }
     }
   }
@@ -329,6 +328,7 @@ class StateManager {
           await this.adapter.delObjectAsync(localId);
           await this.adapter.delStateAsync(localId).catch(() => {
           });
+          this.knownStates.delete(localId);
           deleted++;
         }
       }
@@ -354,18 +354,21 @@ class StateManager {
       common: { name, type, role, read: true, write },
       native: {}
     });
+    this.knownStates.add(id);
   }
   /**
-   * Set state value only if the object exists
+   * Set state value only if the object exists.
+   * Uses an in-memory cache populated during createDeviceStates to avoid
+   * hitting the object DB on every update.
    *
    * @param id Identifier string
    * @param value Value to send
    */
   async setStateIfExists(id, value) {
-    const obj = await this.adapter.getObjectAsync(id);
-    if (obj) {
-      await this.adapter.setStateAsync(id, { val: value, ack: true });
+    if (!this.knownStates.has(id)) {
+      return;
     }
+    await this.adapter.setStateAsync(id, { val: value, ack: true });
   }
 }
 // Annotate the CommonJS export names for ESM import in node:

@@ -490,19 +490,6 @@ describe("StateManager", () => {
         });
     });
 
-    describe("updateOnline", () => {
-        it("should update online state", async () => {
-            const { adapter, states } = createMockAdapter();
-            const sm = new StateManager(adapter);
-            const device = createTestDevice();
-
-            await sm.createDeviceStates(device, []);
-
-            await sm.updateOnline(device, false);
-            expect(states.get("devices.h7131_ab3f.info.online")).to.deep.include({ val: false, ack: true });
-        });
-    });
-
     describe("updateRawMqttData", () => {
         it("should update MQTT packet states", async () => {
             const { adapter, states } = createMockAdapter();

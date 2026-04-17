@@ -132,6 +132,15 @@ export class RateLimiter {
     );
   }
 
+  /**
+   * Record an external API call against the budget without queueing.
+   * Used for callers that must run immediately (e.g. startup discovery).
+   */
+  recordCall(): void {
+    this.callsThisMinute++;
+    this.callsToday++;
+  }
+
   /** Current daily usage */
   get dailyUsage(): number {
     return this.callsToday;

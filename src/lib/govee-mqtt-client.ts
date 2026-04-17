@@ -11,7 +11,7 @@ import {
 } from "./types.js";
 
 /** Max consecutive auth failures before giving up */
-const MAX_AUTH_FAILURES = 3;
+const MAX_AUTH_FAILURES = 5;
 
 const LOGIN_URL = "https://app2.govee.com/account/rest/account/v2/login";
 const IOT_KEY_URL = "https://app2.govee.com/app/v1/account/iot/key";
@@ -47,11 +47,7 @@ rqXRfboQnoZsG4q5WTP468SQvvG5
 export type MqttStatusCallback = (update: MqttStatusUpdate) => void;
 
 /** Callback for raw MQTT messages (for research/diagnostics) */
-export type MqttRawCallback = (
-  sku: string,
-  device: string,
-  packets: string[],
-) => void;
+export type MqttRawCallback = (device: string, packets: string[]) => void;
 
 /** Callback for MQTT connection state changes */
 export type MqttConnectionCallback = (connected: boolean) => void;
@@ -280,7 +276,7 @@ export class GoveeMqttClient {
       // Forward raw BLE packets for research logging
       const packets = update.op?.command;
       if (packets && packets.length > 0 && this.onRaw) {
-        this.onRaw(update.sku, update.device, packets);
+        this.onRaw(update.device, packets);
       }
 
       this.onStatus?.(update);

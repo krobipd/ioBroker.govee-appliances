@@ -113,6 +113,7 @@ class GoveeOpenapiMqttClient {
               "OpenAPI MQTT auth failed repeatedly \u2014 check API key"
             );
             (_a = this.onConnection) == null ? void 0 : _a.call(this, false);
+            this.disconnect();
             return;
           }
         }

@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "govee-appliances",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "news": {
+      "0.0.3": {
+        "en": "Bug fixes for MQTT toggles, JSON safety, rate-limit accounting, and online state ordering. Performance improvements via in-memory state cache. Removed dead code and applied KISS refactors.",
+        "de": "Bugfixes für MQTT-Toggle, JSON-Sicherheit, Rate-Limit-Accounting und Online-State-Reihenfolge. Performance durch In-Memory-State-Cache. Toter Code entfernt und KISS-Refactorings.",
+        "ru": "Исправления MQTT-переключателей, безопасности JSON, учёта rate-limit и порядка online-состояний. Производительность через кэш состояний в памяти.",
+        "pt": "Correções para toggles MQTT, segurança JSON, contabilidade de rate-limit e ordem de estado online. Melhorias de performance via cache de estado em memória.",
+        "nl": "Bugfixes voor MQTT-toggles, JSON-veiligheid, rate-limit-administratie en online-state-volgorde. Performance via in-memory state cache.",
+        "fr": "Corrections de bugs pour les bascules MQTT, la sécurité JSON, la comptabilité du rate-limit et l'ordre des états en ligne. Performance via cache d'état en mémoire.",
+        "it": "Correzioni per toggle MQTT, sicurezza JSON, conteggio rate-limit e ordine stato online. Performance tramite cache di stato in memoria.",
+        "es": "Correcciones para toggles MQTT, seguridad JSON, contabilidad de rate-limit y orden de estado en línea. Rendimiento mediante caché de estado en memoria.",
+        "pl": "Poprawki dla przełączników MQTT, bezpieczeństwa JSON, ewidencji rate-limit i kolejności stanu online. Wydajność dzięki pamięci podręcznej stanu.",
+        "uk": "Виправлення MQTT-перемикачів, безпеки JSON, обліку rate-limit та порядку online-станів. Продуктивність через кеш станів у пам'яті.",
+        "zh-cn": "修复MQTT开关、JSON安全、速率限制计费和在线状态顺序的错误。通过内存状态缓存提升性能。"
+      },
       "0.0.2": {
         "en": "Fix event state updates from OpenAPI MQTT, improved diagnostics export, added raw data states for OpenAPI events",
         "de": "Fix Event-State-Updates von OpenAPI MQTT, verbesserte Diagnostics, neue Rohdaten-States für OpenAPI Events",

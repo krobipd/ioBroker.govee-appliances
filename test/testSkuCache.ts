@@ -106,15 +106,6 @@ describe("SkuCache", () => {
         expect(all).to.have.length(2);
     });
 
-    it("should clear all cache entries", () => {
-        const cache = new SkuCache(dir, mockLog);
-        cache.save(createTestData("H7131", "AA:BB:CC:DD:11:22:33:44"));
-        cache.save(createTestData("H7172", "EE:FF:00:11:22:33:44:55"));
-        expect(cache.loadAll()).to.have.length(2);
-        cache.clear();
-        expect(cache.loadAll()).to.have.length(0);
-    });
-
     it("should handle corrupt JSON gracefully", () => {
         const cache = new SkuCache(dir, mockLog);
         const cacheDir = path.join(dir, "cache");

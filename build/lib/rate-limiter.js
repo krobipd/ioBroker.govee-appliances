@@ -119,6 +119,14 @@ class RateLimiter {
   canMakeCall() {
     return this.callsThisMinute < this.perMinuteLimit && this.callsToday < this.perDayLimit;
   }
+  /**
+   * Record an external API call against the budget without queueing.
+   * Used for callers that must run immediately (e.g. startup discovery).
+   */
+  recordCall() {
+    this.callsThisMinute++;
+    this.callsToday++;
+  }
   /** Current daily usage */
   get dailyUsage() {
     return this.callsToday;

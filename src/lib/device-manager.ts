@@ -148,6 +148,7 @@ export class DeviceManager {
     }
 
     try {
+      this.rateLimiter?.recordCall();
       const cloudDevices = await this.cloudClient.getDevices();
       const appliances = cloudDevices.filter(
         (d) => !LIGHT_TYPES.includes(d.type),
@@ -161,27 +162,35 @@ export class DeviceManager {
       for (const cd of appliances) {
         const key = normalizeDeviceId(cd.device);
         const existing = this.devices.get(key);
+        let changed = false;
 
         if (existing) {
-          // Update existing device
-          existing.name = cd.deviceName;
-          existing.type = cd.type;
-          existing.capabilities = cd.capabilities;
+          if (
+            existing.name !== cd.deviceName ||
+            existing.type !== cd.type ||
+            JSON.stringify(existing.capabilities) !==
+              JSON.stringify(cd.capabilities)
+          ) {
+            existing.name = cd.deviceName;
+            existing.type = cd.type;
+            existing.capabilities = cd.capabilities;
+            changed = true;
+          }
         } else {
-          // New device
           this.devices.set(key, this.cloudToDevice(cd));
           newCount++;
+          changed = true;
         }
 
-        // Cache device data
-        this.cacheDevice(key);
+        if (changed) {
+          this.cacheDevice(key);
+        }
       }
 
       if (newCount > 0) {
         this.log.debug(`Cloud: ${newCount} new appliances discovered`);
       }
 
-      // Reset error dedup on success
       if (this.lastErrorCategory) {
         this.log.info("Cloud API connection restored");
         this.lastErrorCategory = null;
@@ -229,12 +238,14 @@ export class DeviceManager {
 
   /**
    * Handle MQTT status update for a device.
+   * Stores raw state internally; we don't translate MQTT keys to ioBroker
+   * states because the MQTT payload format isn't documented for appliances.
+   * Cloud polling remains the source of truth for state values.
    *
    * @param update MQTT status update
    */
   handleMqttStatus(update: MqttStatusUpdate): void {
-    const key = normalizeDeviceId(update.device);
-    const device = this.devices.get(key);
+    const device = this.devices.get(normalizeDeviceId(update.device));
     if (!device) {
       this.log.debug(
         `MQTT status for unknown device: ${update.sku} ${update.device}`,
@@ -242,26 +253,8 @@ export class DeviceManager {
       return;
     }
 
-    // Store raw state for research
     if (update.state) {
       Object.assign(device.state, update.state);
-    }
-
-    // Forward as pseudo-capabilities for state update
-    const caps: CloudStateCapability[] = [];
-    if (update.state) {
-      for (const [key, value] of Object.entries(update.state)) {
-        // MQTT state keys map roughly to capability instances
-        caps.push({
-          type: `devices.capabilities.${this.guessCapabilityType(key)}`,
-          instance: key,
-          state: { value },
-        });
-      }
-    }
-
-    if (caps.length > 0) {
-      this.onDeviceUpdate?.(device, caps);
     }
   }
 
@@ -320,11 +313,10 @@ export class DeviceManager {
   /**
    * Store raw BLE packets from MQTT for research.
    *
-   * @param _sku Product model (unused)
    * @param deviceId Device identifier
    * @param packets BLE packet data
    */
-  handleRawPackets(_sku: string, deviceId: string, packets: string[]): void {
+  handleRawPackets(deviceId: string, packets: string[]): void {
     const key = normalizeDeviceId(deviceId);
     const device = this.devices.get(key);
     if (!device) {
@@ -482,28 +474,5 @@ export class DeviceManager {
       cachedAt: Date.now(),
     };
     this.skuCache.save(data);
-  }
-
-  /**
-   * Guess capability type from MQTT state key.
-   * MQTT sends raw state keys without full capability type prefix.
-   *
-   * @param key Device key
-   */
-  private guessCapabilityType(key: string): string {
-    const k = key.toLowerCase();
-    if (k === "onoff" || k === "powerswitch") {
-      return "on_off";
-    }
-    if (k.includes("temperature")) {
-      return "property";
-    }
-    if (k.includes("humidity")) {
-      return "property";
-    }
-    if (k.includes("mode")) {
-      return "work_mode";
-    }
-    return "property";
   }
 }

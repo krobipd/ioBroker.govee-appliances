@@ -35,7 +35,7 @@ var forge = __toESM(require("node-forge"));
 var mqtt = __toESM(require("mqtt"));
 var import_http_client = require("./http-client.js");
 var import_types = require("./types.js");
-const MAX_AUTH_FAILURES = 3;
+const MAX_AUTH_FAILURES = 5;
 const LOGIN_URL = "https://app2.govee.com/account/rest/account/v2/login";
 const IOT_KEY_URL = "https://app2.govee.com/app/v1/account/iot/key";
 const APP_VERSION = "7.3.30";
@@ -245,7 +245,7 @@ class GoveeMqttClient {
       }
       const packets = (_c = update.op) == null ? void 0 : _c.command;
       if (packets && packets.length > 0 && this.onRaw) {
-        this.onRaw(update.sku, update.device, packets);
+        this.onRaw(update.device, packets);
       }
       (_d = this.onStatus) == null ? void 0 : _d.call(this, update);
     } catch {

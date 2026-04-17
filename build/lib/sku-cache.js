@@ -84,24 +84,6 @@ class SkuCache {
     }
     return results;
   }
-  /** Delete all cached files. */
-  clear() {
-    try {
-      if (!fs.existsSync(this.cacheDir)) {
-        return;
-      }
-      for (const file of fs.readdirSync(this.cacheDir)) {
-        if (file.endsWith(".json")) {
-          fs.unlinkSync(path.join(this.cacheDir, file));
-        }
-      }
-      this.log.debug("Cache cleared");
-    } catch (e) {
-      this.log.debug(
-        `Cache clear failed: ${e instanceof Error ? e.message : String(e)}`
-      );
-    }
-  }
   /**
    * Build cache file path for a device.
    *

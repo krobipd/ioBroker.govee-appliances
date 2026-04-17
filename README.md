@@ -162,6 +162,17 @@ If you find this adapter useful, consider supporting the development:
 
 ### **WORK IN PROGRESS**
 
+### 0.0.3 (2026-04-17)
+- Fix: Toggle/on_off MQTT updates now accept both `1` and `true` values
+- Fix: Crash safety on invalid JSON in mode commands
+- Fix: Discovery rate-limit budget no longer skipped at startup
+- Fix: `info.online` reference exists before device object is created
+- Fix: AWS IoT MQTT no longer reconnects after max auth failures
+- Performance: in-memory state cache replaces per-update object DB lookup
+- Performance: Cache writes only when device data actually changed
+- Removed unused dynamic_scene mapping, sku-cache `clear()`, and pseudo-capability MQTT forwarding
+- KISS refactors: unified info-state init, on_off/toggle case merge
+
 ### 0.0.2 (2026-04-15)
 - Fix: Event states now update correctly from OpenAPI MQTT
 - Fix: Cloud API state response stored on every poll

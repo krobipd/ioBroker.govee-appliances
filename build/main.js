@@ -62,48 +62,26 @@ class GoveeAppliancesAdapter extends utils.Adapter {
       common: { name: "Information" },
       native: {}
     });
-    await this.setObjectNotExistsAsync("info.connection", {
-      type: "state",
-      common: {
-        name: "Connection status",
-        type: "boolean",
-        role: "indicator.connected",
-        read: true,
-        write: false,
-        def: false
-      },
-      native: {}
-    });
-    await this.setObjectNotExistsAsync("info.mqttConnected", {
-      type: "state",
-      common: {
-        name: "MQTT connected",
-        type: "boolean",
-        role: "indicator.connected",
-        read: true,
-        write: false,
-        def: false
-      },
-      native: {}
-    });
-    await this.setObjectNotExistsAsync("info.openapiMqttConnected", {
-      type: "state",
-      common: {
-        name: "OpenAPI MQTT connected",
-        type: "boolean",
-        role: "indicator.connected",
-        read: true,
-        write: false,
-        def: false
-      },
-      native: {}
-    });
-    await this.setStateAsync("info.connection", { val: false, ack: true });
-    await this.setStateAsync("info.mqttConnected", { val: false, ack: true });
-    await this.setStateAsync("info.openapiMqttConnected", {
-      val: false,
-      ack: true
-    });
+    const infoStates = [
+      ["connection", "Connection status"],
+      ["mqttConnected", "MQTT connected"],
+      ["openapiMqttConnected", "OpenAPI MQTT connected"]
+    ];
+    for (const [id, name] of infoStates) {
+      await this.setObjectNotExistsAsync(`info.${id}`, {
+        type: "state",
+        common: {
+          name,
+          type: "boolean",
+          role: "indicator.connected",
+          read: true,
+          write: false,
+          def: false
+        },
+        native: {}
+      });
+      await this.setStateAsync(`info.${id}`, { val: false, ack: true });
+    }
     this.stateManager = new import_state_manager.StateManager(this);
     this.deviceManager = new import_device_manager.DeviceManager(this.log);
     const dataDir = utils.getAbsoluteInstanceDataDir(this);
@@ -150,7 +128,7 @@ class GoveeAppliancesAdapter extends utils.Adapter {
             ack: true
           });
         },
-        (sku, deviceId, packets) => this.deviceManager.handleRawPackets(sku, deviceId, packets)
+        (deviceId, packets) => this.deviceManager.handleRawPackets(deviceId, packets)
       );
     }
     this.openapiMqttClient = new import_govee_openapi_mqtt_client.GoveeOpenapiMqttClient(
@@ -349,7 +327,6 @@ class GoveeAppliancesAdapter extends utils.Adapter {
     const shortType = capType.replace("devices.capabilities.", "");
     switch (shortType) {
       case "on_off":
-        return value ? 1 : 0;
       case "toggle":
         return value ? 1 : 0;
       case "range":
@@ -376,7 +353,17 @@ class GoveeAppliancesAdapter extends utils.Adapter {
         return typeof value === "number" ? value : Number(value);
       }
       case "mode":
-        return typeof value === "string" && value.startsWith("{") ? JSON.parse(value) : value;
+        if (typeof value === "string" && value.startsWith("{")) {
+          try {
+            return JSON.parse(value);
+          } catch {
+            this.log.warn(
+              `Invalid JSON for mode value on ${device.sku}: ${value.slice(0, 80)}`
+            );
+            return void 0;
+          }
+        }
+        return value;
       default:
         return value;
     }

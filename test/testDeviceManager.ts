@@ -283,9 +283,8 @@ describe("DeviceManager", () => {
     });
 
     describe("handleMqttStatus", () => {
-        it("should update state for known device", () => {
+        it("should merge state into device.state for known device", () => {
             const dm = new DeviceManager(mockLog);
-            let updateCalled = false;
 
             dm.setSkuCache({
                 loadAll: () => [
@@ -300,13 +299,8 @@ describe("DeviceManager", () => {
                     },
                 ],
                 save: () => {},
-                clear: () => {},
             } as any);
             dm.loadFromCache();
-
-            dm.setOnDeviceUpdate(() => {
-                updateCalled = true;
-            });
 
             dm.handleMqttStatus({
                 sku: "H7131",
@@ -314,60 +308,20 @@ describe("DeviceManager", () => {
                 state: { powerSwitch: 1, targetTemperature: 72 },
             });
 
-            expect(updateCalled).to.be.true;
             const device = dm.getDevice("AA:BB:CC:DD:11:22:33:44");
             expect(device!.state.powerSwitch).to.equal(1);
             expect(device!.state.targetTemperature).to.equal(72);
         });
 
-        it("should ignore unknown device", () => {
+        it("should ignore unknown device without throwing", () => {
             const dm = new DeviceManager(mockLog);
-            let updateCalled = false;
-
-            dm.setOnDeviceUpdate(() => {
-                updateCalled = true;
-            });
 
             dm.handleMqttStatus({
                 sku: "H9999",
                 device: "00:00:00:00:00:00:00:00",
                 state: { power: 1 },
             });
-
-            expect(updateCalled).to.be.false;
-        });
-
-        it("should not call callback when state is empty", () => {
-            const dm = new DeviceManager(mockLog);
-            let updateCalled = false;
-
-            dm.setSkuCache({
-                loadAll: () => [
-                    {
-                        sku: "H7131",
-                        deviceId: "AA:BB:CC:DD:11:22:33:44",
-                        name: "Heater",
-                        type: "devices.types.heater",
-                        capabilities: [],
-                        lastState: {},
-                        cachedAt: Date.now(),
-                    },
-                ],
-                save: () => {},
-                clear: () => {},
-            } as any);
-            dm.loadFromCache();
-
-            dm.setOnDeviceUpdate(() => {
-                updateCalled = true;
-            });
-
-            dm.handleMqttStatus({
-                sku: "H7131",
-                device: "AA:BB:CC:DD:11:22:33:44",
-            });
-
-            expect(updateCalled).to.be.false;
+            // No exception expected
         });
     });
 
@@ -392,7 +346,7 @@ describe("DeviceManager", () => {
             } as any);
             dm.loadFromCache();
 
-            dm.handleRawPackets("H7131", "AA:BB:CC:DD:11:22:33:44", ["aa0501", "aa0502"]);
+            dm.handleRawPackets("AA:BB:CC:DD:11:22:33:44", ["aa0501", "aa0502"]);
 
             const device = dm.getDevice("AA:BB:CC:DD:11:22:33:44");
             expect(device!.rawMqttPackets).to.have.lengthOf(1);
@@ -422,7 +376,7 @@ describe("DeviceManager", () => {
 
             // Add 55 entries
             for (let i = 0; i < 55; i++) {
-                dm.handleRawPackets("H7131", "AA:BB:CC:DD:11:22:33:44", [`pkt_${i}`]);
+                dm.handleRawPackets("AA:BB:CC:DD:11:22:33:44", [`pkt_${i}`]);
             }
 
             const device = dm.getDevice("AA:BB:CC:DD:11:22:33:44");
@@ -435,7 +389,7 @@ describe("DeviceManager", () => {
         it("should ignore packets for unknown device", () => {
             const dm = new DeviceManager(mockLog);
             // No exception expected
-            dm.handleRawPackets("H9999", "00:00:00:00:00:00:00:00", ["aa05"]);
+            dm.handleRawPackets("00:00:00:00:00:00:00:00", ["aa05"]);
         });
     });
 
