@@ -243,7 +243,7 @@ function mapSingleCapability(cap: CloudCapability): StateDefinition[] | null {
  * @param cap Cloud capability to map
  */
 function mapRange(cap: CloudCapability): StateDefinition[] {
-  const range = cap.parameters.range;
+  const range = cap.parameters?.range;
   const inst = cap.instance.toLowerCase();
   let role = "level";
 
@@ -262,7 +262,7 @@ function mapRange(cap: CloudCapability): StateDefinition[] {
       write: true,
       min: range?.min ?? 0,
       max: range?.max ?? 100,
-      unit: normalizeUnit(cap.parameters.unit),
+      unit: normalizeUnit(cap.parameters?.unit),
       def: range?.min ?? 0,
       capabilityType: cap.type,
       capabilityInstance: cap.instance,
@@ -277,7 +277,7 @@ function mapRange(cap: CloudCapability): StateDefinition[] {
  * @param cap Cloud capability to map
  */
 function mapWorkMode(cap: CloudCapability): StateDefinition[] {
-  const fields = cap.parameters.fields;
+  const fields = cap.parameters?.fields;
   if (!fields || fields.length === 0) {
     // Fallback: expose as JSON
     return [
@@ -362,12 +362,13 @@ function mapWorkMode(cap: CloudCapability): StateDefinition[] {
  * @param cap Cloud capability to map
  */
 function mapMode(cap: CloudCapability): StateDefinition[] {
-  if (!cap.parameters.options || cap.parameters.options.length === 0) {
+  const options = cap.parameters?.options;
+  if (!options || options.length === 0) {
     return [];
   }
 
   const modeStates: Record<string, string> = {};
-  for (const opt of cap.parameters.options) {
+  for (const opt of options) {
     const val =
       typeof opt.value === "object"
         ? JSON.stringify(opt.value)
@@ -397,7 +398,7 @@ function mapMode(cap: CloudCapability): StateDefinition[] {
  */
 function mapTemperatureSetting(cap: CloudCapability): StateDefinition[] {
   // Try to find targetTemperature field in STRUCT
-  const fields = cap.parameters.fields;
+  const fields = cap.parameters?.fields;
   if (fields && fields.length > 0) {
     const tempField = fields.find(
       (f) =>
@@ -405,7 +406,7 @@ function mapTemperatureSetting(cap: CloudCapability): StateDefinition[] {
         f.fieldName.toLowerCase().includes("temperature"),
     );
     if (tempField?.range) {
-      const unit = normalizeUnit(cap.parameters.unit) ?? "°F";
+      const unit = normalizeUnit(cap.parameters?.unit) ?? "°F";
       return [
         {
           id: "target_temperature",
@@ -425,8 +426,9 @@ function mapTemperatureSetting(cap: CloudCapability): StateDefinition[] {
   }
 
   // Simple range-based temperature
-  if (cap.parameters.range) {
-    const unit = normalizeUnit(cap.parameters.unit) ?? "°F";
+  const range = cap.parameters?.range;
+  if (range) {
+    const unit = normalizeUnit(cap.parameters?.unit) ?? "°F";
     return [
       {
         id: "target_temperature",
@@ -434,10 +436,10 @@ function mapTemperatureSetting(cap: CloudCapability): StateDefinition[] {
         type: "number",
         role: "level.temperature",
         write: true,
-        min: cap.parameters.range.min,
-        max: cap.parameters.range.max,
+        min: range.min,
+        max: range.max,
         unit,
-        def: cap.parameters.range.min,
+        def: range.min,
         capabilityType: cap.type,
         capabilityInstance: cap.instance,
       },
@@ -484,7 +486,7 @@ function mapColorSetting(cap: CloudCapability): StateDefinition[] {
     cap.instance === "colorTemperatureK" ||
     cap.instance.includes("colorTem")
   ) {
-    const range = cap.parameters.range;
+    const range = cap.parameters?.range;
     return [
       {
         id: "color_temperature",
@@ -536,7 +538,7 @@ function mapProperty(cap: CloudCapability): StateDefinition[] {
       type: "number",
       role,
       write: false,
-      unit: normalizeUnit(cap.parameters.unit) ?? unit,
+      unit: normalizeUnit(cap.parameters?.unit) ?? unit,
       capabilityType: cap.type,
       capabilityInstance: cap.instance,
       channel: "sensor",

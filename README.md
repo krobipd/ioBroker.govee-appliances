@@ -162,6 +162,10 @@ If you find this adapter useful, consider supporting the development:
 
 ### **WORK IN PROGRESS**
 
+### 0.0.5 (2026-04-17)
+- Fix: prevent crash when Cloud API returns a capability without `parameters` (mapper now guards every `cap.parameters` access)
+- Test: regression coverage for missing `parameters` across all map functions
+
 ### 0.0.4 (2026-04-17)
 - Fix: Filter out light groups (BaseGroup) from appliance discovery
 - Fix: Adapter no longer crashes on unexpected capability shapes

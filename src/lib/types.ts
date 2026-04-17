@@ -32,8 +32,8 @@ export interface CloudCapability {
   type: string;
   /** Capability instance (e.g. "powerSwitch", "brightness") */
   instance: string;
-  /** Parameter definition for this capability */
-  parameters: CapabilityParameters;
+  /** Parameter definition for this capability (Cloud API may omit it) */
+  parameters?: CapabilityParameters;
   /** Alarm type for event capabilities */
   alarmType?: number;
   /** Event state options for event capabilities */

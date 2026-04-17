@@ -293,6 +293,32 @@ describe("CapabilityMapper", () => {
             expect(result[0].id).to.equal("nightlight_scene");
             expect(result[0].states).to.deep.include({ "1": "Warm", "2": "Cool" });
         });
+
+        // Regression: Cloud API can omit `parameters` entirely. Every map function
+        // must survive that without throwing — see crash report 2026-04-17.
+        it("should not throw when parameters is missing for property", () => {
+            const caps: CloudCapability[] = [{
+                type: "devices.capabilities.property",
+                instance: "sensorTemperature",
+            } as CloudCapability];
+            const result = mapCapabilities(caps);
+            expect(result).to.have.lengthOf(1);
+            expect(result[0].channel).to.equal("sensor");
+            expect(result[0].unit).to.equal("°C");
+        });
+
+        it("should not throw when parameters is missing for range/work_mode/mode/temperature_setting/color_setting", () => {
+            const caps: CloudCapability[] = [
+                { type: "devices.capabilities.range", instance: "brightness" } as CloudCapability,
+                { type: "devices.capabilities.work_mode", instance: "workMode" } as CloudCapability,
+                { type: "devices.capabilities.mode", instance: "scene" } as CloudCapability,
+                { type: "devices.capabilities.temperature_setting", instance: "targetTemperature" } as CloudCapability,
+                { type: "devices.capabilities.color_setting", instance: "colorTemperatureK" } as CloudCapability,
+            ];
+            // Must complete without throwing — individual results may be empty/fallback
+            const result = mapCapabilities(caps);
+            expect(result).to.be.an("array");
+        });
     });
 
     describe("mapCloudStateValue", () => {

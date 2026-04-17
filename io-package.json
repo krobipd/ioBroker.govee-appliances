@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "govee-appliances",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "news": {
+      "0.0.5": {
+        "en": "Bugfix: prevent crash when Cloud API returns capability without parameters",
+        "de": "Bugfix: Crash verhindert wenn Cloud-API eine Capability ohne parameters liefert",
+        "ru": "Исправление: предотвращён сбой, когда Cloud API возвращает capability без parameters",
+        "pt": "Correção: evita crash quando Cloud API retorna capability sem parameters",
+        "nl": "Bugfix: voorkomt crash als Cloud API een capability zonder parameters retourneert",
+        "fr": "Correctif : prévient un crash lorsque la Cloud API retourne une capability sans parameters",
+        "it": "Bugfix: previene crash quando la Cloud API restituisce una capability senza parameters",
+        "es": "Corrección: evita crash cuando la Cloud API devuelve una capability sin parameters",
+        "pl": "Bugfix: zapobiega awarii gdy Cloud API zwraca capability bez parameters",
+        "uk": "Виправлення: запобігає краху, коли Cloud API повертає capability без parameters",
+        "zh-cn": "修复：当 Cloud API 返回不带 parameters 的 capability 时防止崩溃"
+      },
       "0.0.4": {
         "en": "Stability hotfixes from server smoke-test: filter light groups, guard against undefined capability shapes, prevent restart loops on unhandled rejections.",
         "de": "Stabilitäts-Hotfixes aus Server-Smoke-Test: Light-Gruppen filtern, gegen undefined Capability-Shapes absichern, Restart-Loops bei unhandled rejections verhindern.",
