@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "govee-appliances",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "news": {
+      "0.0.4": {
+        "en": "Stability hotfixes from server smoke-test: filter light groups, guard against undefined capability shapes, prevent restart loops on unhandled rejections.",
+        "de": "Stabilitäts-Hotfixes aus Server-Smoke-Test: Light-Gruppen filtern, gegen undefined Capability-Shapes absichern, Restart-Loops bei unhandled rejections verhindern.",
+        "ru": "Исправления стабильности из smoke-теста: фильтрация световых групп, защита от undefined capability shapes, предотвращение циклов перезапуска.",
+        "pt": "Hotfixes de estabilidade do smoke-test: filtra grupos de luzes, protege contra capability shapes undefined, evita loops de reinício.",
+        "nl": "Stabiliteits-hotfixes uit smoke-test: filter lichtgroepen, bescherm tegen undefined capability shapes, voorkom restart-loops.",
+        "fr": "Correctifs de stabilité du smoke-test : filtrage des groupes de lumières, protection contre les capability shapes undefined, prévention des boucles de redémarrage.",
+        "it": "Hotfix di stabilità dal smoke-test: filtra gruppi di luci, protegge da capability shape undefined, previene loop di riavvio.",
+        "es": "Hotfixes de estabilidad del smoke-test: filtra grupos de luces, protege contra capability shapes undefined, previene bucles de reinicio.",
+        "pl": "Poprawki stabilności z smoke-testu: filtrowanie grup świateł, zabezpieczenie przed undefined capability shapes, zapobieganie pętlom restartu.",
+        "uk": "Виправлення стабільності з smoke-тесту: фільтрація світлових груп, захист від undefined capability shapes, запобігання циклам перезапуску.",
+        "zh-cn": "来自烟雾测试的稳定性热修复：过滤灯组，防范未定义的能力形状，防止重启循环。"
+      },
       "0.0.3": {
         "en": "Bug fixes for MQTT toggles, JSON safety, rate-limit accounting, and online state ordering. Performance improvements via in-memory state cache. Removed dead code and applied KISS refactors.",
         "de": "Bugfixes für MQTT-Toggle, JSON-Sicherheit, Rate-Limit-Accounting und Online-State-Reihenfolge. Performance durch In-Memory-State-Cache. Toter Code entfernt und KISS-Refactorings.",

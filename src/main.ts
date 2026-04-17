@@ -38,7 +38,7 @@ class GoveeAppliancesAdapter extends utils.Adapter {
     this.on("ready", () => {
       this.onReady().catch((err) => {
         this.log.error(
-          `onReady failed: ${err instanceof Error ? err.stack ?? err.message : String(err)}`,
+          `onReady failed: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`,
         );
       });
     });
@@ -52,7 +52,7 @@ class GoveeAppliancesAdapter extends utils.Adapter {
     this.on("unload", (callback) => this.onUnload(callback));
     process.on("unhandledRejection", (reason) => {
       this.log.error(
-        `Unhandled promise rejection: ${reason instanceof Error ? reason.stack ?? reason.message : String(reason)}`,
+        `Unhandled promise rejection: ${reason instanceof Error ? (reason.stack ?? reason.message) : String(reason)}`,
       );
     });
   }
@@ -525,10 +525,7 @@ class GoveeAppliancesAdapter extends utils.Adapter {
     } else {
       const types = new Map<string, number>();
       for (const d of devices) {
-        const shortType = (d.type ?? "unknown").replace(
-          "devices.types.",
-          "",
-        );
+        const shortType = (d.type ?? "unknown").replace("devices.types.", "");
         types.set(shortType, (types.get(shortType) ?? 0) + 1);
       }
       const summary = Array.from(types.entries())

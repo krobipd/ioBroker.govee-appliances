@@ -441,10 +441,7 @@ class GoveeAppliancesAdapter extends utils.Adapter {
     } else {
       const types = /* @__PURE__ */ new Map();
       for (const d of devices) {
-        const shortType = ((_c = d.type) != null ? _c : "unknown").replace(
-          "devices.types.",
-          ""
-        );
+        const shortType = ((_c = d.type) != null ? _c : "unknown").replace("devices.types.", "");
         types.set(shortType, ((_d = types.get(shortType)) != null ? _d : 0) + 1);
       }
       const summary = Array.from(types.entries()).map(([t, c]) => `${c}\xD7 ${t}`).join(", ");

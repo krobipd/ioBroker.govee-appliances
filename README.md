@@ -162,15 +162,18 @@ If you find this adapter useful, consider supporting the development:
 
 ### **WORK IN PROGRESS**
 
+### 0.0.4 (2026-04-17)
+- Fix: Filter out light groups (BaseGroup) from appliance discovery
+- Fix: Adapter no longer crashes on unexpected capability shapes
+- Fix: Unhandled rejections in onReady/onStateChange logged instead of crashing the process
+- Fix: Default device.type to "unknown" in ready summary
+
 ### 0.0.3 (2026-04-17)
 - Fix: Toggle/on_off MQTT updates now accept both `1` and `true` values
 - Fix: Crash safety on invalid JSON in mode commands
 - Fix: Discovery rate-limit budget no longer skipped at startup
 - Fix: `info.online` reference exists before device object is created
 - Fix: AWS IoT MQTT no longer reconnects after max auth failures
-- Fix: Filter out light groups (BaseGroup) from appliance discovery
-- Fix: Adapter no longer crashes on unexpected capability shapes
-- Fix: Unhandled rejections in onReady/onStateChange logged instead of crashing
 - Performance: in-memory state cache replaces per-update object DB lookup
 - Performance: Cache writes only when device data actually changed
 - Removed unused dynamic_scene mapping, sku-cache `clear()`, and pseudo-capability MQTT forwarding
