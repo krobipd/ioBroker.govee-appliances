@@ -61,6 +61,24 @@ describe("Types utilities", () => {
         it("should lowercase SKU", () => {
             expect(devicePrefix("H7172", "11:22:33:44:55:66:77:88")).to.equal("h7172_7788");
         });
+
+        it("should sanitize SKU with whitespace or dots", () => {
+            // Cloud can theoretically return quirky model strings — they must
+            // NOT land in an object id. Whitelisted to [a-z0-9_-].
+            expect(devicePrefix("H7160 V2", "11:22:33:44:55:66:AB:CD")).to.equal("h7160_v2_abcd");
+            expect(devicePrefix("H7160.Pro", "11:22:33:44:55:66:77:88")).to.equal("h7160_pro_7788");
+        });
+
+        it("should fall back to 'unknown' when SKU is empty after sanitisation", () => {
+            expect(devicePrefix("", "AA:BB:CC:DD:EE:FF:AB:3F")).to.equal("unknown_ab3f");
+            expect(devicePrefix("...", "AA:BB:CC:DD:EE:FF:AB:3F")).to.equal("unknown_ab3f");
+        });
+
+        it("should not throw on non-string SKU", () => {
+            expect(() =>
+                devicePrefix(null as unknown as string, "AA:BB:CC:DD:EE:FF:AB:3F"),
+            ).to.not.throw();
+        });
     });
 
     describe("normalizeUnit", () => {

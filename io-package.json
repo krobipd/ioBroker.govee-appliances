@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "govee-appliances",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "news": {
+      "0.0.8": {
+        "en": "Harden devicePrefix sku sanitisation: whitelist to `[a-z0-9_-]` with fallback to `unknown` for empty/garbled values. Cloud can theoretically return SKUs with spaces or dots (e.g. 'H7160 V2') — they now get normalised before landing in an object id.",
+        "de": "devicePrefix sku-Sanitisation gehärtet: Whitelist auf `[a-z0-9_-]` mit Fallback auf `unknown` bei leer/garbled. Cloud kann theoretisch SKUs mit Leerzeichen oder Punkten liefern (z.B. 'H7160 V2') — werden jetzt normalisiert bevor sie in einer Object-ID landen.",
+        "ru": "Укрепление sku-sanitisation: whitelist на `[a-z0-9_-]`.",
+        "pt": "Reforço da sanitisation do sku: whitelist para `[a-z0-9_-]`.",
+        "nl": "devicePrefix sku-sanitisation verhard: whitelist op `[a-z0-9_-]`.",
+        "fr": "Renforcement de la sanitisation sku: whitelist sur `[a-z0-9_-]`.",
+        "it": "Rafforzamento della sanitizzazione sku: whitelist su `[a-z0-9_-]`.",
+        "es": "Endurecimiento de la sanitización sku: whitelist a `[a-z0-9_-]`.",
+        "pl": "Wzmocnienie sanitisation sku: whitelist do `[a-z0-9_-]`.",
+        "uk": "Укріплення sku-sanitisation: whitelist на `[a-z0-9_-]`.",
+        "zh-cn": "加强 sku 清理: 白名单到 `[a-z0-9_-]`。"
+      },
       "0.0.7": {
         "en": "Move test infrastructure to the ioBroker standard: test/package.js and test/integration.js as plain JS, calling tests.packageFiles / tests.integration directly. No runtime change — this only affects CI.",
         "de": "Test-Infrastruktur auf ioBroker-Standard umgestellt: test/package.js und test/integration.js als plain JS, ruft tests.packageFiles / tests.integration direkt auf. Keine Laufzeit-Änderung — betrifft nur CI.",
@@ -80,19 +93,6 @@
         "pl": "Poprawka aktualizacji stanów zdarzeń z OpenAPI MQTT, ulepszona diagnostyka, nowe stany dla zdarzeń OpenAPI",
         "uk": "Виправлення оновлення станів подій з OpenAPI MQTT, покращена діагностика, нові стани для подій OpenAPI",
         "zh-cn": "修复OpenAPI MQTT事件状态更新，改进诊断导出，添加OpenAPI事件原始数据状态"
-      },
-      "0.0.1": {
-        "en": "Initial alpha: Cloud API v2 device discovery, capability-based state generation, raw data logging for protocol research",
-        "de": "Erstes Alpha: Cloud API v2 Geräte-Erkennung, Capability-basierte State-Generierung, Rohdaten-Logging für Protokoll-Forschung",
-        "ru": "Начальная альфа: обнаружение устройств Cloud API v2, генерация состояний на основе возможностей, логирование сырых данных",
-        "pt": "Alfa inicial: descoberta de dispositivos Cloud API v2, geração de estados baseada em capacidades, logging de dados brutos",
-        "nl": "Eerste alpha: Cloud API v2 apparaatdetectie, capability-gebaseerde state-generatie, ruwe data logging",
-        "fr": "Alpha initial: découverte des appareils Cloud API v2, génération d'états basée sur les capacités, journalisation des données brutes",
-        "it": "Alpha iniziale: scoperta dispositivi Cloud API v2, generazione stati basata su capacità, logging dati grezzi",
-        "es": "Alpha inicial: descubrimiento de dispositivos Cloud API v2, generación de estados basada en capacidades, registro de datos brutos",
-        "pl": "Początkowa alfa: wykrywanie urządzeń Cloud API v2, generowanie stanów na podstawie możliwości, logowanie surowych danych",
-        "uk": "Початкова альфа: виявлення пристроїв Cloud API v2, генерація станів на основі можливостей, логування сирих даних",
-        "zh-cn": "初始Alpha：Cloud API v2设备发现，基于能力的状态生成，原始数据记录"
       }
     },
     "titleLang": {

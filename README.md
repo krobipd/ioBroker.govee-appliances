@@ -162,6 +162,9 @@ If you find this adapter useful, consider supporting the development:
 
 ### **WORK IN PROGRESS**
 
+### 0.0.8 (2026-04-19)
+- Harden `devicePrefix` SKU sanitisation: whitelist to `[a-z0-9_-]` with fallback to `unknown` for empty/garbled values. Cloud can theoretically return SKUs with spaces or dots (e.g. `"H7160 V2"`) — they now get normalised before landing in an object id. Matches the ioBroker best-practice the hueemu Latest-repo review called out.
+
 ### 0.0.7 (2026-04-19)
 - Test infrastructure aligned with the ioBroker standard: `test/package.js` and `test/integration.js` as plain JS calling `tests.packageFiles` / `tests.integration` directly (matching every other adapter in the workspace). No runtime change — this only affects CI and the future Latest-repo review.
 

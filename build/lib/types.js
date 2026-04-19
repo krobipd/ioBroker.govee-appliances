@@ -63,7 +63,9 @@ function shortDeviceId(deviceId) {
   return normalized.slice(-4);
 }
 function devicePrefix(sku, deviceId) {
-  return `${sku.toLowerCase()}_${shortDeviceId(deviceId)}`;
+  const safeSku = typeof sku === "string" ? sku : "";
+  const sanitizedSku = safeSku.toLowerCase().replace(/[^a-z0-9_-]/g, "_").replace(/^_+|_+$/g, "");
+  return `${sanitizedSku || "unknown"}_${shortDeviceId(deviceId)}`;
 }
 function normalizeUnit(unit) {
   var _a;

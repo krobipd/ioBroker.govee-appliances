@@ -324,13 +324,24 @@ export function shortDeviceId(deviceId: string): string {
 }
 
 /**
- * Build folder name for a device: sku_shortId (e.g. "h7131_ab3f")
+ * Build folder name for a device: sku_shortId (e.g. "h7131_ab3f").
+ *
+ * Sku is lower-cased AND whitelisted to `[a-z0-9_-]` — Cloud is free to
+ * return anything (spaces, dots, model revisions like "H7160 V2"), so we
+ * normalise before it lands in an object id. `FORBIDDEN_CHARS` would be
+ * enough, but a restrictive whitelist is the ioBroker best-practice for
+ * new adapters (see hueemu PR review).
  *
  * @param sku sku
  * @param deviceId Device identifier
  */
 export function devicePrefix(sku: string, deviceId: string): string {
-  return `${sku.toLowerCase()}_${shortDeviceId(deviceId)}`;
+  const safeSku = typeof sku === "string" ? sku : "";
+  const sanitizedSku = safeSku
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return `${sanitizedSku || "unknown"}_${shortDeviceId(deviceId)}`;
 }
 
 /**
