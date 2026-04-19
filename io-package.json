@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "govee-appliances",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "news": {
+      "0.0.7": {
+        "en": "Move test infrastructure to the ioBroker standard: test/package.js and test/integration.js as plain JS, calling tests.packageFiles / tests.integration directly. No runtime change — this only affects CI.",
+        "de": "Test-Infrastruktur auf ioBroker-Standard umgestellt: test/package.js und test/integration.js als plain JS, ruft tests.packageFiles / tests.integration direkt auf. Keine Laufzeit-Änderung — betrifft nur CI.",
+        "ru": "Тестовая инфраструктура переведена на стандарт ioBroker. Только CI.",
+        "pt": "Infraestrutura de testes migrada para o padrão ioBroker. Apenas CI.",
+        "nl": "Testinfrastructuur naar ioBroker-standaard. Alleen CI.",
+        "fr": "Infrastructure de test alignée sur le standard ioBroker. Uniquement CI.",
+        "it": "Infrastruttura di test allineata allo standard ioBroker. Solo CI.",
+        "es": "Infraestructura de pruebas alineada con el estándar de ioBroker. Solo CI.",
+        "pl": "Infrastruktura testów przeniesiona na standard ioBroker. Tylko CI.",
+        "uk": "Інфраструктура тестів переведена на стандарт ioBroker. Лише CI.",
+        "zh-cn": "测试基础设施迁移到 ioBroker 标准。仅影响 CI。"
+      },
       "0.0.6": {
         "en": "Hardening: guard every Cloud API field that could be missing or of wrong type (instance, fieldName, device ID). Accept string booleans/numbers the Cloud API occasionally sends instead of silently dropping them.",
         "de": "Härtung: jedes Cloud-API-Feld das fehlen oder den falschen Typ haben könnte (instance, fieldName, device ID) ist jetzt geprüft. String-Booleans/Zahlen die die Cloud-API manchmal schickt werden akzeptiert statt stillschweigend verloren zu gehen.",

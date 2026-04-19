@@ -24,7 +24,25 @@ __export(capability_mapper_exports, {
 });
 module.exports = __toCommonJS(capability_mapper_exports);
 var import_types = require("./types.js");
+function coerceBool(v) {
+  return v === true || v === 1 || v === "1" || v === "true";
+}
+function coerceNum(v) {
+  if (typeof v === "number" && Number.isFinite(v)) {
+    return v;
+  }
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v);
+    if (Number.isFinite(n)) {
+      return n;
+    }
+  }
+  return null;
+}
 function mapCapabilities(capabilities) {
+  if (!Array.isArray(capabilities)) {
+    return [];
+  }
   const states = [];
   for (const cap of capabilities) {
     const mapped = mapSingleCapability(cap);
@@ -127,7 +145,7 @@ function buildDeviceStateDefs(device) {
   return stateDefs;
 }
 function mapSingleCapability(cap) {
-  if (typeof (cap == null ? void 0 : cap.type) !== "string") {
+  if (typeof (cap == null ? void 0 : cap.type) !== "string" || typeof cap.instance !== "string") {
     return null;
   }
   const shortType = cap.type.replace("devices.capabilities.", "");
@@ -179,8 +197,8 @@ function mapSingleCapability(cap) {
   }
 }
 function mapRange(cap) {
-  var _a, _b, _c;
-  const range = cap.parameters.range;
+  var _a, _b, _c, _d, _e;
+  const range = (_a = cap.parameters) == null ? void 0 : _a.range;
   const inst = cap.instance.toLowerCase();
   let role = "level";
   if (inst.includes("brightness")) {
@@ -195,17 +213,18 @@ function mapRange(cap) {
       type: "number",
       role,
       write: true,
-      min: (_a = range == null ? void 0 : range.min) != null ? _a : 0,
-      max: (_b = range == null ? void 0 : range.max) != null ? _b : 100,
-      unit: (0, import_types.normalizeUnit)(cap.parameters.unit),
-      def: (_c = range == null ? void 0 : range.min) != null ? _c : 0,
+      min: (_b = range == null ? void 0 : range.min) != null ? _b : 0,
+      max: (_c = range == null ? void 0 : range.max) != null ? _c : 100,
+      unit: (0, import_types.normalizeUnit)((_d = cap.parameters) == null ? void 0 : _d.unit),
+      def: (_e = range == null ? void 0 : range.min) != null ? _e : 0,
       capabilityType: cap.type,
       capabilityInstance: cap.instance
     }
   ];
 }
 function mapWorkMode(cap) {
-  const fields = cap.parameters.fields;
+  var _a;
+  const fields = (_a = cap.parameters) == null ? void 0 : _a.fields;
   if (!fields || fields.length === 0) {
     return [
       {
@@ -275,11 +294,13 @@ function mapWorkMode(cap) {
   return states;
 }
 function mapMode(cap) {
-  if (!cap.parameters.options || cap.parameters.options.length === 0) {
+  var _a;
+  const options = (_a = cap.parameters) == null ? void 0 : _a.options;
+  if (!options || options.length === 0) {
     return [];
   }
   const modeStates = {};
-  for (const opt of cap.parameters.options) {
+  for (const opt of options) {
     const val = typeof opt.value === "object" ? JSON.stringify(opt.value) : String(opt.value);
     modeStates[val] = opt.name;
   }
@@ -298,14 +319,20 @@ function mapMode(cap) {
   ];
 }
 function mapTemperatureSetting(cap) {
-  var _a, _b;
-  const fields = cap.parameters.fields;
+  var _a, _b, _c, _d, _e, _f;
+  const fields = (_a = cap.parameters) == null ? void 0 : _a.fields;
   if (fields && fields.length > 0) {
-    const tempField = fields.find(
-      (f) => f.fieldName === "targetTemperature" || f.fieldName.toLowerCase().includes("temperature")
-    );
+    const tempField = fields.find((f) => {
+      if (f.fieldName === "targetTemperature") {
+        return true;
+      }
+      if (typeof f.fieldName !== "string") {
+        return false;
+      }
+      return f.fieldName.toLowerCase().includes("temperature");
+    });
     if (tempField == null ? void 0 : tempField.range) {
-      const unit = (_a = (0, import_types.normalizeUnit)(cap.parameters.unit)) != null ? _a : "\xB0F";
+      const unit = (_c = (0, import_types.normalizeUnit)((_b = cap.parameters) == null ? void 0 : _b.unit)) != null ? _c : "\xB0F";
       return [
         {
           id: "target_temperature",
@@ -323,8 +350,9 @@ function mapTemperatureSetting(cap) {
       ];
     }
   }
-  if (cap.parameters.range) {
-    const unit = (_b = (0, import_types.normalizeUnit)(cap.parameters.unit)) != null ? _b : "\xB0F";
+  const range = (_d = cap.parameters) == null ? void 0 : _d.range;
+  if (range) {
+    const unit = (_f = (0, import_types.normalizeUnit)((_e = cap.parameters) == null ? void 0 : _e.unit)) != null ? _f : "\xB0F";
     return [
       {
         id: "target_temperature",
@@ -332,10 +360,10 @@ function mapTemperatureSetting(cap) {
         type: "number",
         role: "level.temperature",
         write: true,
-        min: cap.parameters.range.min,
-        max: cap.parameters.range.max,
+        min: range.min,
+        max: range.max,
         unit,
-        def: cap.parameters.range.min,
+        def: range.min,
         capabilityType: cap.type,
         capabilityInstance: cap.instance
       }
@@ -355,7 +383,7 @@ function mapTemperatureSetting(cap) {
   ];
 }
 function mapColorSetting(cap) {
-  var _a, _b, _c;
+  var _a, _b, _c, _d;
   if (cap.instance === "colorRgb") {
     return [
       {
@@ -371,7 +399,7 @@ function mapColorSetting(cap) {
     ];
   }
   if (cap.instance === "colorTemperatureK" || cap.instance.includes("colorTem")) {
-    const range = cap.parameters.range;
+    const range = (_a = cap.parameters) == null ? void 0 : _a.range;
     return [
       {
         id: "color_temperature",
@@ -379,10 +407,10 @@ function mapColorSetting(cap) {
         type: "number",
         role: "level.color.temperature",
         write: true,
-        min: (_a = range == null ? void 0 : range.min) != null ? _a : 2e3,
-        max: (_b = range == null ? void 0 : range.max) != null ? _b : 9e3,
+        min: (_b = range == null ? void 0 : range.min) != null ? _b : 2e3,
+        max: (_c = range == null ? void 0 : range.max) != null ? _c : 9e3,
         unit: "K",
-        def: (_c = range == null ? void 0 : range.min) != null ? _c : 2e3,
+        def: (_d = range == null ? void 0 : range.min) != null ? _d : 2e3,
         capabilityType: cap.type,
         capabilityInstance: cap.instance
       }
@@ -391,7 +419,7 @@ function mapColorSetting(cap) {
   return [];
 }
 function mapProperty(cap) {
-  var _a;
+  var _a, _b;
   const instance = cap.instance.toLowerCase();
   let role = "value";
   let unit;
@@ -415,7 +443,7 @@ function mapProperty(cap) {
       type: "number",
       role,
       write: false,
-      unit: (_a = (0, import_types.normalizeUnit)(cap.parameters.unit)) != null ? _a : unit,
+      unit: (_b = (0, import_types.normalizeUnit)((_a = cap.parameters) == null ? void 0 : _a.unit)) != null ? _b : unit,
       capabilityType: cap.type,
       capabilityInstance: cap.instance,
       channel: "sensor"
@@ -438,8 +466,8 @@ function mapEvent(cap) {
   ];
 }
 function mapCloudStateValue(cap) {
-  var _a;
-  if (typeof (cap == null ? void 0 : cap.type) !== "string") {
+  var _a, _b;
+  if (typeof (cap == null ? void 0 : cap.type) !== "string" || typeof cap.instance !== "string") {
     return [];
   }
   const shortType = cap.type.replace("devices.capabilities.", "");
@@ -449,23 +477,28 @@ function mapCloudStateValue(cap) {
   }
   switch (shortType) {
     case "on_off":
-      return [{ stateId: "power", value: raw === 1 || raw === true }];
+      return [{ stateId: "power", value: coerceBool(raw) }];
     case "toggle":
       return [
         {
           stateId: sanitizeId(cap.instance),
-          value: raw === 1 || raw === true
+          value: coerceBool(raw)
         }
       ];
-    case "range":
-      return [{ stateId: sanitizeId(cap.instance), value: raw }];
+    case "range": {
+      const num = coerceNum(raw);
+      if (num === null) {
+        return [];
+      }
+      return [{ stateId: sanitizeId(cap.instance), value: num }];
+    }
     case "work_mode":
       return mapWorkModeState(raw);
     case "temperature_setting":
       return mapTemperatureSettingState(raw);
     case "color_setting":
       if (cap.instance === "colorRgb") {
-        const num = typeof raw === "number" ? raw : 0;
+        const num = (_b = coerceNum(raw)) != null ? _b : 0;
         return [
           {
             stateId: "color_rgb",
@@ -474,7 +507,11 @@ function mapCloudStateValue(cap) {
         ];
       }
       if (cap.instance.includes("colorTem")) {
-        return [{ stateId: "color_temperature", value: raw }];
+        const num = coerceNum(raw);
+        if (num === null) {
+          return [];
+        }
+        return [{ stateId: "color_temperature", value: num }];
       }
       return [];
     case "mode":
@@ -484,24 +521,29 @@ function mapCloudStateValue(cap) {
           value: typeof raw === "object" ? JSON.stringify(raw) : String(raw)
         }
       ];
-    case "property":
+    case "property": {
+      const num = coerceNum(raw);
+      if (num === null) {
+        return [];
+      }
       return [
         {
           stateId: sanitizeId(cap.instance),
-          value: raw,
+          value: num,
           channel: "sensor"
         }
       ];
+    }
     case "event":
       return [
         {
           stateId: sanitizeId(cap.instance),
-          value: raw === 1 || raw === true,
+          value: coerceBool(raw),
           channel: "events"
         }
       ];
     case "online":
-      return [{ stateId: "online", value: raw === true || raw === 1 }];
+      return [{ stateId: "online", value: coerceBool(raw) }];
     default:
       return [];
   }
@@ -513,29 +555,31 @@ function mapWorkModeState(raw) {
   const struct = raw;
   const results = [];
   if ("workMode" in struct && struct.workMode !== void 0) {
-    results.push({
-      stateId: "work_mode",
-      value: struct.workMode
-    });
+    const n = coerceNum(struct.workMode);
+    if (n !== null) {
+      results.push({ stateId: "work_mode", value: n });
+    }
   }
   if ("modeValue" in struct && struct.modeValue !== void 0) {
-    results.push({
-      stateId: "mode_value",
-      value: struct.modeValue
-    });
+    const n = coerceNum(struct.modeValue);
+    if (n !== null) {
+      results.push({ stateId: "mode_value", value: n });
+    }
   }
   return results;
 }
 function mapTemperatureSettingState(raw) {
   var _a, _b;
-  if (typeof raw === "number") {
-    return [{ stateId: "target_temperature", value: raw }];
+  const direct = coerceNum(raw);
+  if (direct !== null) {
+    return [{ stateId: "target_temperature", value: direct }];
   }
   if (typeof raw === "object" && raw !== null) {
     const struct = raw;
     const temp = (_b = (_a = struct.targetTemperature) != null ? _a : struct.temperature) != null ? _b : struct.temp;
-    if (typeof temp === "number") {
-      return [{ stateId: "target_temperature", value: temp }];
+    const n = coerceNum(temp);
+    if (n !== null) {
+      return [{ stateId: "target_temperature", value: n }];
     }
   }
   return [];

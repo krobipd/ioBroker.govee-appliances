@@ -162,6 +162,9 @@ If you find this adapter useful, consider supporting the development:
 
 ### **WORK IN PROGRESS**
 
+### 0.0.7 (2026-04-19)
+- Test infrastructure aligned with the ioBroker standard: `test/package.js` and `test/integration.js` as plain JS calling `tests.packageFiles` / `tests.integration` directly (matching every other adapter in the workspace). No runtime change — this only affects CI and the future Latest-repo review.
+
 ### 0.0.6 (2026-04-17)
 - Fix: every `cap.instance` access in capability-mapper now requires a string (previously crashed when Cloud API omitted instance)
 - Fix: temperature_setting field with missing `fieldName` no longer crashes
