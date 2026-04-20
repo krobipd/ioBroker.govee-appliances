@@ -24,6 +24,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var utils = __toESM(require("@iobroker/adapter-core"));
 var import_capability_mapper = require("./lib/capability-mapper.js");
 var import_device_manager = require("./lib/device-manager.js");
+var import_govee_app_api_client = require("./lib/govee-app-api-client.js");
 var import_govee_cloud_client = require("./lib/govee-cloud-client.js");
 var import_govee_mqtt_client = require("./lib/govee-mqtt-client.js");
 var import_govee_openapi_mqtt_client = require("./lib/govee-openapi-mqtt-client.js");
@@ -32,18 +33,25 @@ var import_sku_cache = require("./lib/sku-cache.js");
 var import_state_manager = require("./lib/state-manager.js");
 const FULL_LIMITS = { perMinute: 8, perDay: 9e3 };
 const SHARED_LIMITS = { perMinute: 4, perDay: 4500 };
-const SIBLING_ALIVE_ID = "system.adapter.govee-smart.0.alive";
+const SIBLING_ALIVE_PATTERN = "system.adapter.govee-smart.*.alive";
+function isSiblingAliveId(id) {
+  return id.startsWith("system.adapter.govee-smart.") && id.endsWith(".alive");
+}
 class GoveeAppliancesAdapter extends utils.Adapter {
   deviceManager = null;
   stateManager = null;
   mqttClient = null;
   openapiMqttClient = null;
   cloudClient = null;
+  appApiClient = null;
   rateLimiter = null;
   skuCache = null;
   pollTimer;
+  appApiPollTimer;
   readyLogged = false;
   siblingActive = false;
+  /** Active govee-smart instance ids (e.g. "govee-smart.0") */
+  siblingInstancesAlive = /* @__PURE__ */ new Set();
   constructor(options = {}) {
     super({ ...options, name: "govee-appliances" });
     this.on("ready", () => {
@@ -139,6 +147,8 @@ class GoveeAppliancesAdapter extends utils.Adapter {
         this.log,
         timers
       );
+      this.appApiClient = new import_govee_app_api_client.GoveeAppApiClient();
+      this.deviceManager.setAppApiClient(this.appApiClient);
       void this.mqttClient.connect(
         (update) => this.deviceManager.handleMqttStatus(update),
         (connected) => {
@@ -147,7 +157,11 @@ class GoveeAppliancesAdapter extends utils.Adapter {
             ack: true
           });
         },
-        (deviceId, packets) => this.deviceManager.handleRawPackets(deviceId, packets)
+        (deviceId, packets) => this.deviceManager.handleRawPackets(deviceId, packets),
+        (token) => {
+          var _a;
+          return (_a = this.appApiClient) == null ? void 0 : _a.setBearerToken(token);
+        }
       );
     }
     this.openapiMqttClient = new import_govee_openapi_mqtt_client.GoveeOpenapiMqttClient(
@@ -180,6 +194,11 @@ class GoveeAppliancesAdapter extends utils.Adapter {
     this.pollTimer = this.setInterval(() => {
       void this.pollCycle();
     }, pollMs);
+    if (this.appApiClient) {
+      this.appApiPollTimer = this.setInterval(() => {
+        void this.appApiPollCycle();
+      }, pollMs);
+    }
     await this.subscribeStatesAsync("devices.*.control.*");
     await this.subscribeStatesAsync("devices.*.raw.diagnostics_export");
   }
@@ -189,6 +208,18 @@ class GoveeAppliancesAdapter extends utils.Adapter {
       return;
     }
     await this.deviceManager.pollDeviceStates();
+  }
+  /**
+   * App-API polling — reads every device's last-known state via the
+   * undocumented `/device/rest/devices/v1/list` endpoint in one call.
+   * Fills in sensor values (temperature, humidity, battery, online) for
+   * devices where OpenAPI `/device/state` returns an empty capability list.
+   */
+  async appApiPollCycle() {
+    if (!this.deviceManager) {
+      return;
+    }
+    await this.deviceManager.pollAppApi();
   }
   /**
    * Handle device state update from Cloud or MQTT
@@ -249,8 +280,14 @@ class GoveeAppliancesAdapter extends utils.Adapter {
    * @param state state
    */
   async onStateChange(id, state) {
-    if (id === SIBLING_ALIVE_ID) {
-      this.applySiblingLimits((state == null ? void 0 : state.val) === true);
+    if (isSiblingAliveId(id)) {
+      const instance = id.replace("system.adapter.", "").replace(/\.alive$/, "");
+      if ((state == null ? void 0 : state.val) === true) {
+        this.siblingInstancesAlive.add(instance);
+      } else {
+        this.siblingInstancesAlive.delete(instance);
+      }
+      this.applySiblingLimits(this.siblingInstancesAlive.size > 0);
       return;
     }
     if (!state || state.ack || !this.deviceManager || !this.stateManager) {
@@ -388,14 +425,24 @@ class GoveeAppliancesAdapter extends utils.Adapter {
     }
   }
   /**
-   * Detect if sibling adapter (govee-smart) is running and adjust rate limits.
-   * Subscribes to alive state for dynamic updates.
+   * Detect which govee-smart instances (if any) are running. Subscribes to
+   * the whole `system.adapter.govee-smart.*.alive` namespace so start/stop
+   * of any instance feeds back into applySiblingLimits.
    */
   async detectSiblingAdapter() {
     try {
-      const alive = await this.getForeignStateAsync(SIBLING_ALIVE_ID);
-      this.applySiblingLimits((alive == null ? void 0 : alive.val) === true);
-      await this.subscribeForeignStatesAsync(SIBLING_ALIVE_ID);
+      const instances = await this.getForeignObjectsAsync(
+        "system.adapter.govee-smart.*",
+        "instance"
+      );
+      for (const id of Object.keys(instances != null ? instances : {})) {
+        const state = await this.getForeignStateAsync(`${id}.alive`);
+        if ((state == null ? void 0 : state.val) === true) {
+          this.siblingInstancesAlive.add(id.replace("system.adapter.", ""));
+        }
+      }
+      this.applySiblingLimits(this.siblingInstancesAlive.size > 0);
+      await this.subscribeForeignStatesAsync(SIBLING_ALIVE_PATTERN);
     } catch {
       this.applySiblingLimits(false);
     }
@@ -461,6 +508,10 @@ class GoveeAppliancesAdapter extends utils.Adapter {
       if (this.pollTimer) {
         this.clearInterval(this.pollTimer);
         this.pollTimer = void 0;
+      }
+      if (this.appApiPollTimer) {
+        this.clearInterval(this.appApiPollTimer);
+        this.appApiPollTimer = void 0;
       }
       (_a = this.rateLimiter) == null ? void 0 : _a.stop();
       (_b = this.mqttClient) == null ? void 0 : _b.disconnect();

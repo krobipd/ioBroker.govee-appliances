@@ -1,184 +1,175 @@
 {
-  "common": {
-    "name": "govee-appliances",
-    "version": "0.0.8",
-    "news": {
-      "0.0.8": {
-        "en": "Harden devicePrefix sku sanitisation: whitelist to `[a-z0-9_-]` with fallback to `unknown` for empty/garbled values. Cloud can theoretically return SKUs with spaces or dots (e.g. 'H7160 V2') — they now get normalised before landing in an object id.",
-        "de": "devicePrefix sku-Sanitisation gehärtet: Whitelist auf `[a-z0-9_-]` mit Fallback auf `unknown` bei leer/garbled. Cloud kann theoretisch SKUs mit Leerzeichen oder Punkten liefern (z.B. 'H7160 V2') — werden jetzt normalisiert bevor sie in einer Object-ID landen.",
-        "ru": "Укрепление sku-sanitisation: whitelist на `[a-z0-9_-]`.",
-        "pt": "Reforço da sanitisation do sku: whitelist para `[a-z0-9_-]`.",
-        "nl": "devicePrefix sku-sanitisation verhard: whitelist op `[a-z0-9_-]`.",
-        "fr": "Renforcement de la sanitisation sku: whitelist sur `[a-z0-9_-]`.",
-        "it": "Rafforzamento della sanitizzazione sku: whitelist su `[a-z0-9_-]`.",
-        "es": "Endurecimiento de la sanitización sku: whitelist a `[a-z0-9_-]`.",
-        "pl": "Wzmocnienie sanitisation sku: whitelist do `[a-z0-9_-]`.",
-        "uk": "Укріплення sku-sanitisation: whitelist на `[a-z0-9_-]`.",
-        "zh-cn": "加强 sku 清理: 白名单到 `[a-z0-9_-]`。"
-      },
-      "0.0.7": {
-        "en": "Move test infrastructure to the ioBroker standard: test/package.js and test/integration.js as plain JS, calling tests.packageFiles / tests.integration directly. No runtime change — this only affects CI.",
-        "de": "Test-Infrastruktur auf ioBroker-Standard umgestellt: test/package.js und test/integration.js als plain JS, ruft tests.packageFiles / tests.integration direkt auf. Keine Laufzeit-Änderung — betrifft nur CI.",
-        "ru": "Тестовая инфраструктура переведена на стандарт ioBroker. Только CI.",
-        "pt": "Infraestrutura de testes migrada para o padrão ioBroker. Apenas CI.",
-        "nl": "Testinfrastructuur naar ioBroker-standaard. Alleen CI.",
-        "fr": "Infrastructure de test alignée sur le standard ioBroker. Uniquement CI.",
-        "it": "Infrastruttura di test allineata allo standard ioBroker. Solo CI.",
-        "es": "Infraestructura de pruebas alineada con el estándar de ioBroker. Solo CI.",
-        "pl": "Infrastruktura testów przeniesiona na standard ioBroker. Tylko CI.",
-        "uk": "Інфраструктура тестів переведена на стандарт ioBroker. Лише CI.",
-        "zh-cn": "测试基础设施迁移到 ioBroker 标准。仅影响 CI。"
-      },
-      "0.0.6": {
-        "en": "Hardening: guard every Cloud API field that could be missing or of wrong type (instance, fieldName, device ID). Accept string booleans/numbers the Cloud API occasionally sends instead of silently dropping them.",
-        "de": "Härtung: jedes Cloud-API-Feld das fehlen oder den falschen Typ haben könnte (instance, fieldName, device ID) ist jetzt geprüft. String-Booleans/Zahlen die die Cloud-API manchmal schickt werden akzeptiert statt stillschweigend verloren zu gehen.",
-        "ru": "Упрочнение: проверка каждого поля Cloud API, которое может отсутствовать или быть неверного типа. Приём строковых булевых/числовых значений.",
-        "pt": "Robustez: cada campo da Cloud API que pode estar ausente ou com tipo errado é agora verificado. Aceita booleanos/números em string que a API envia ocasionalmente.",
-        "nl": "Harding: elk Cloud API-veld dat kan ontbreken of een verkeerd type kan hebben is nu gecontroleerd. Accepteert string-booleans/getallen.",
-        "fr": "Durcissement : chaque champ de la Cloud API pouvant être manquant ou de mauvais type est désormais vérifié. Accepte les booléens/nombres au format chaîne.",
-        "it": "Rafforzamento: ogni campo della Cloud API che potrebbe mancare o avere tipo sbagliato è ora controllato. Accetta booleani/numeri in formato stringa.",
-        "es": "Endurecimiento: cada campo de la Cloud API que puede faltar o tener tipo incorrecto se verifica ahora. Acepta booleanos/números en formato cadena.",
-        "pl": "Utwardzenie: każde pole Cloud API, które może być nieobecne lub mieć zły typ, jest teraz sprawdzane. Akceptuje ciągi z wartościami logicznymi/liczbowymi.",
-        "uk": "Зміцнення: кожне поле Cloud API, яке може бути відсутнім або мати неправильний тип, тепер перевіряється. Приймає рядкові булеві/числові значення.",
-        "zh-cn": "加固：对每个可能缺失或类型错误的 Cloud API 字段进行检查。接受偶尔发送的字符串布尔值/数字。"
-      },
-      "0.0.5": {
-        "en": "Bugfix: prevent crash when Cloud API returns capability without parameters",
-        "de": "Bugfix: Crash verhindert wenn Cloud-API eine Capability ohne parameters liefert",
-        "ru": "Исправление: предотвращён сбой, когда Cloud API возвращает capability без parameters",
-        "pt": "Correção: evita crash quando Cloud API retorna capability sem parameters",
-        "nl": "Bugfix: voorkomt crash als Cloud API een capability zonder parameters retourneert",
-        "fr": "Correctif : prévient un crash lorsque la Cloud API retourne une capability sans parameters",
-        "it": "Bugfix: previene crash quando la Cloud API restituisce una capability senza parameters",
-        "es": "Corrección: evita crash cuando la Cloud API devuelve una capability sin parameters",
-        "pl": "Bugfix: zapobiega awarii gdy Cloud API zwraca capability bez parameters",
-        "uk": "Виправлення: запобігає краху, коли Cloud API повертає capability без parameters",
-        "zh-cn": "修复：当 Cloud API 返回不带 parameters 的 capability 时防止崩溃"
-      },
-      "0.0.4": {
-        "en": "Stability hotfixes from server smoke-test: filter light groups, guard against undefined capability shapes, prevent restart loops on unhandled rejections.",
-        "de": "Stabilitäts-Hotfixes aus Server-Smoke-Test: Light-Gruppen filtern, gegen undefined Capability-Shapes absichern, Restart-Loops bei unhandled rejections verhindern.",
-        "ru": "Исправления стабильности из smoke-теста: фильтрация световых групп, защита от undefined capability shapes, предотвращение циклов перезапуска.",
-        "pt": "Hotfixes de estabilidade do smoke-test: filtra grupos de luzes, protege contra capability shapes undefined, evita loops de reinício.",
-        "nl": "Stabiliteits-hotfixes uit smoke-test: filter lichtgroepen, bescherm tegen undefined capability shapes, voorkom restart-loops.",
-        "fr": "Correctifs de stabilité du smoke-test : filtrage des groupes de lumières, protection contre les capability shapes undefined, prévention des boucles de redémarrage.",
-        "it": "Hotfix di stabilità dal smoke-test: filtra gruppi di luci, protegge da capability shape undefined, previene loop di riavvio.",
-        "es": "Hotfixes de estabilidad del smoke-test: filtra grupos de luces, protege contra capability shapes undefined, previene bucles de reinicio.",
-        "pl": "Poprawki stabilności z smoke-testu: filtrowanie grup świateł, zabezpieczenie przed undefined capability shapes, zapobieganie pętlom restartu.",
-        "uk": "Виправлення стабільності з smoke-тесту: фільтрація світлових груп, захист від undefined capability shapes, запобігання циклам перезапуску.",
-        "zh-cn": "来自烟雾测试的稳定性热修复：过滤灯组，防范未定义的能力形状，防止重启循环。"
-      },
-      "0.0.3": {
-        "en": "Bug fixes for MQTT toggles, JSON safety, rate-limit accounting, and online state ordering. Performance improvements via in-memory state cache. Removed dead code and applied KISS refactors.",
-        "de": "Bugfixes für MQTT-Toggle, JSON-Sicherheit, Rate-Limit-Accounting und Online-State-Reihenfolge. Performance durch In-Memory-State-Cache. Toter Code entfernt und KISS-Refactorings.",
-        "ru": "Исправления MQTT-переключателей, безопасности JSON, учёта rate-limit и порядка online-состояний. Производительность через кэш состояний в памяти.",
-        "pt": "Correções para toggles MQTT, segurança JSON, contabilidade de rate-limit e ordem de estado online. Melhorias de performance via cache de estado em memória.",
-        "nl": "Bugfixes voor MQTT-toggles, JSON-veiligheid, rate-limit-administratie en online-state-volgorde. Performance via in-memory state cache.",
-        "fr": "Corrections de bugs pour les bascules MQTT, la sécurité JSON, la comptabilité du rate-limit et l'ordre des états en ligne. Performance via cache d'état en mémoire.",
-        "it": "Correzioni per toggle MQTT, sicurezza JSON, conteggio rate-limit e ordine stato online. Performance tramite cache di stato in memoria.",
-        "es": "Correcciones para toggles MQTT, seguridad JSON, contabilidad de rate-limit y orden de estado en línea. Rendimiento mediante caché de estado en memoria.",
-        "pl": "Poprawki dla przełączników MQTT, bezpieczeństwa JSON, ewidencji rate-limit i kolejności stanu online. Wydajność dzięki pamięci podręcznej stanu.",
-        "uk": "Виправлення MQTT-перемикачів, безпеки JSON, обліку rate-limit та порядку online-станів. Продуктивність через кеш станів у пам'яті.",
-        "zh-cn": "修复MQTT开关、JSON安全、速率限制计费和在线状态顺序的错误。通过内存状态缓存提升性能。"
-      },
-      "0.0.2": {
-        "en": "Fix event state updates from OpenAPI MQTT, improved diagnostics export, added raw data states for OpenAPI events",
-        "de": "Fix Event-State-Updates von OpenAPI MQTT, verbesserte Diagnostics, neue Rohdaten-States für OpenAPI Events",
-        "ru": "Исправление обновления состояний событий из OpenAPI MQTT, улучшенная диагностика, новые состояния для событий OpenAPI",
-        "pt": "Correção de atualizações de estados de eventos do OpenAPI MQTT, diagnósticos melhorados, novos estados para eventos OpenAPI",
-        "nl": "Fix event state-updates van OpenAPI MQTT, verbeterde diagnostics, nieuwe raw data states voor OpenAPI events",
-        "fr": "Correction des mises à jour d'états d'événements OpenAPI MQTT, diagnostics améliorés, nouveaux états pour événements OpenAPI",
-        "it": "Fix aggiornamenti stati eventi da OpenAPI MQTT, diagnostica migliorata, nuovi stati per eventi OpenAPI",
-        "es": "Corrección de actualizaciones de estados de eventos OpenAPI MQTT, diagnósticos mejorados, nuevos estados para eventos OpenAPI",
-        "pl": "Poprawka aktualizacji stanów zdarzeń z OpenAPI MQTT, ulepszona diagnostyka, nowe stany dla zdarzeń OpenAPI",
-        "uk": "Виправлення оновлення станів подій з OpenAPI MQTT, покращена діагностика, нові стани для подій OpenAPI",
-        "zh-cn": "修复OpenAPI MQTT事件状态更新，改进诊断导出，添加OpenAPI事件原始数据状态"
-      }
+    "common": {
+        "name": "govee-appliances",
+        "version": "0.0.9",
+        "news": {
+            "0.0.9": {
+                "en": "New app-API sensor channel — fills in temperature/humidity for cloud-synced sensors like H5179 that OpenAPI v2 /device/state leaves empty. Plus v1.8.0 patterns from govee-smart: UTC-aligned daily reset, stable MQTT session UUID, shared govee-constants, crypto.randomUUID, sibling govee-smart detection across all instances, parallel state writes.",
+                "de": "Neuer App-API-Sensorkanal — füllt Temperatur/Luftfeuchte für Cloud-synchronisierte Sensoren wie H5179 (OpenAPI v2 /device/state lässt die Werte bei diesen Geräten leer). Plus v1.8.0-Patterns aus govee-smart: UTC-ausgerichteter Daily-Reset, stabile MQTT-Session-UUID, shared govee-constants, crypto.randomUUID, Sibling-Erkennung für alle govee-smart-Instanzen, parallele State-Writes."
+            },
+            "0.0.8": {
+                "en": "Harden devicePrefix sku sanitisation: whitelist to `[a-z0-9_-]` with fallback to `unknown` for empty/garbled values. Cloud can theoretically return SKUs with spaces or dots (e.g. 'H7160 V2') — they now get normalised before landing in an object id.",
+                "de": "devicePrefix sku-Sanitisation gehärtet: Whitelist auf `[a-z0-9_-]` mit Fallback auf `unknown` bei leer/garbled. Cloud kann theoretisch SKUs mit Leerzeichen oder Punkten liefern (z.B. 'H7160 V2') — werden jetzt normalisiert bevor sie in einer Object-ID landen.",
+                "ru": "Укрепление sku-sanitisation: whitelist на `[a-z0-9_-]`.",
+                "pt": "Reforço da sanitisation do sku: whitelist para `[a-z0-9_-]`.",
+                "nl": "devicePrefix sku-sanitisation verhard: whitelist op `[a-z0-9_-]`.",
+                "fr": "Renforcement de la sanitisation sku: whitelist sur `[a-z0-9_-]`.",
+                "it": "Rafforzamento della sanitizzazione sku: whitelist su `[a-z0-9_-]`.",
+                "es": "Endurecimiento de la sanitización sku: whitelist a `[a-z0-9_-]`.",
+                "pl": "Wzmocnienie sanitisation sku: whitelist do `[a-z0-9_-]`.",
+                "uk": "Укріплення sku-sanitisation: whitelist на `[a-z0-9_-]`.",
+                "zh-cn": "加强 sku 清理: 白名单到 `[a-z0-9_-]`。"
+            },
+            "0.0.7": {
+                "en": "Move test infrastructure to the ioBroker standard: test/package.js and test/integration.js as plain JS, calling tests.packageFiles / tests.integration directly. No runtime change — this only affects CI.",
+                "de": "Test-Infrastruktur auf ioBroker-Standard umgestellt: test/package.js und test/integration.js als plain JS, ruft tests.packageFiles / tests.integration direkt auf. Keine Laufzeit-Änderung — betrifft nur CI.",
+                "ru": "Тестовая инфраструктура переведена на стандарт ioBroker. Только CI.",
+                "pt": "Infraestrutura de testes migrada para o padrão ioBroker. Apenas CI.",
+                "nl": "Testinfrastructuur naar ioBroker-standaard. Alleen CI.",
+                "fr": "Infrastructure de test alignée sur le standard ioBroker. Uniquement CI.",
+                "it": "Infrastruttura di test allineata allo standard ioBroker. Solo CI.",
+                "es": "Infraestructura de pruebas alineada con el estándar de ioBroker. Solo CI.",
+                "pl": "Infrastruktura testów przeniesiona na standard ioBroker. Tylko CI.",
+                "uk": "Інфраструктура тестів переведена на стандарт ioBroker. Лише CI.",
+                "zh-cn": "测试基础设施迁移到 ioBroker 标准。仅影响 CI。"
+            },
+            "0.0.6": {
+                "en": "Hardening: guard every Cloud API field that could be missing or of wrong type (instance, fieldName, device ID). Accept string booleans/numbers the Cloud API occasionally sends instead of silently dropping them.",
+                "de": "Härtung: jedes Cloud-API-Feld das fehlen oder den falschen Typ haben könnte (instance, fieldName, device ID) ist jetzt geprüft. String-Booleans/Zahlen die die Cloud-API manchmal schickt werden akzeptiert statt stillschweigend verloren zu gehen.",
+                "ru": "Упрочнение: проверка каждого поля Cloud API, которое может отсутствовать или быть неверного типа. Приём строковых булевых/числовых значений.",
+                "pt": "Robustez: cada campo da Cloud API que pode estar ausente ou com tipo errado é agora verificado. Aceita booleanos/números em string que a API envia ocasionalmente.",
+                "nl": "Harding: elk Cloud API-veld dat kan ontbreken of een verkeerd type kan hebben is nu gecontroleerd. Accepteert string-booleans/getallen.",
+                "fr": "Durcissement : chaque champ de la Cloud API pouvant être manquant ou de mauvais type est désormais vérifié. Accepte les booléens/nombres au format chaîne.",
+                "it": "Rafforzamento: ogni campo della Cloud API che potrebbe mancare o avere tipo sbagliato è ora controllato. Accetta booleani/numeri in formato stringa.",
+                "es": "Endurecimiento: cada campo de la Cloud API que puede faltar o tener tipo incorrecto se verifica ahora. Acepta booleanos/números en formato cadena.",
+                "pl": "Utwardzenie: każde pole Cloud API, które może być nieobecne lub mieć zły typ, jest teraz sprawdzane. Akceptuje ciągi z wartościami logicznymi/liczbowymi.",
+                "uk": "Зміцнення: кожне поле Cloud API, яке може бути відсутнім або мати неправильний тип, тепер перевіряється. Приймає рядкові булеві/числові значення.",
+                "zh-cn": "加固：对每个可能缺失或类型错误的 Cloud API 字段进行检查。接受偶尔发送的字符串布尔值/数字。"
+            },
+            "0.0.5": {
+                "en": "Bugfix: prevent crash when Cloud API returns capability without parameters",
+                "de": "Bugfix: Crash verhindert wenn Cloud-API eine Capability ohne parameters liefert",
+                "ru": "Исправление: предотвращён сбой, когда Cloud API возвращает capability без parameters",
+                "pt": "Correção: evita crash quando Cloud API retorna capability sem parameters",
+                "nl": "Bugfix: voorkomt crash als Cloud API een capability zonder parameters retourneert",
+                "fr": "Correctif : prévient un crash lorsque la Cloud API retourne une capability sans parameters",
+                "it": "Bugfix: previene crash quando la Cloud API restituisce una capability senza parameters",
+                "es": "Corrección: evita crash cuando la Cloud API devuelve una capability sin parameters",
+                "pl": "Bugfix: zapobiega awarii gdy Cloud API zwraca capability bez parameters",
+                "uk": "Виправлення: запобігає краху, коли Cloud API повертає capability без parameters",
+                "zh-cn": "修复：当 Cloud API 返回不带 parameters 的 capability 时防止崩溃"
+            },
+            "0.0.4": {
+                "en": "Stability hotfixes from server smoke-test: filter light groups, guard against undefined capability shapes, prevent restart loops on unhandled rejections.",
+                "de": "Stabilitäts-Hotfixes aus Server-Smoke-Test: Light-Gruppen filtern, gegen undefined Capability-Shapes absichern, Restart-Loops bei unhandled rejections verhindern.",
+                "ru": "Исправления стабильности из smoke-теста: фильтрация световых групп, защита от undefined capability shapes, предотвращение циклов перезапуска.",
+                "pt": "Hotfixes de estabilidade do smoke-test: filtra grupos de luzes, protege contra capability shapes undefined, evita loops de reinício.",
+                "nl": "Stabiliteits-hotfixes uit smoke-test: filter lichtgroepen, bescherm tegen undefined capability shapes, voorkom restart-loops.",
+                "fr": "Correctifs de stabilité du smoke-test : filtrage des groupes de lumières, protection contre les capability shapes undefined, prévention des boucles de redémarrage.",
+                "it": "Hotfix di stabilità dal smoke-test: filtra gruppi di luci, protegge da capability shape undefined, previene loop di riavvio.",
+                "es": "Hotfixes de estabilidad del smoke-test: filtra grupos de luces, protege contra capability shapes undefined, previene bucles de reinicio.",
+                "pl": "Poprawki stabilności z smoke-testu: filtrowanie grup świateł, zabezpieczenie przed undefined capability shapes, zapobieganie pętlom restartu.",
+                "uk": "Виправлення стабільності з smoke-тесту: фільтрація світлових груп, захист від undefined capability shapes, запобігання циклам перезапуску.",
+                "zh-cn": "来自烟雾测试的稳定性热修复：过滤灯组，防范未定义的能力形状，防止重启循环。"
+            },
+            "0.0.3": {
+                "en": "Bug fixes for MQTT toggles, JSON safety, rate-limit accounting, and online state ordering. Performance improvements via in-memory state cache. Removed dead code and applied KISS refactors.",
+                "de": "Bugfixes für MQTT-Toggle, JSON-Sicherheit, Rate-Limit-Accounting und Online-State-Reihenfolge. Performance durch In-Memory-State-Cache. Toter Code entfernt und KISS-Refactorings.",
+                "ru": "Исправления MQTT-переключателей, безопасности JSON, учёта rate-limit и порядка online-состояний. Производительность через кэш состояний в памяти.",
+                "pt": "Correções para toggles MQTT, segurança JSON, contabilidade de rate-limit e ordem de estado online. Melhorias de performance via cache de estado em memória.",
+                "nl": "Bugfixes voor MQTT-toggles, JSON-veiligheid, rate-limit-administratie en online-state-volgorde. Performance via in-memory state cache.",
+                "fr": "Corrections de bugs pour les bascules MQTT, la sécurité JSON, la comptabilité du rate-limit et l'ordre des états en ligne. Performance via cache d'état en mémoire.",
+                "it": "Correzioni per toggle MQTT, sicurezza JSON, conteggio rate-limit e ordine stato online. Performance tramite cache di stato in memoria.",
+                "es": "Correcciones para toggles MQTT, seguridad JSON, contabilidad de rate-limit y orden de estado en línea. Rendimiento mediante caché de estado en memoria.",
+                "pl": "Poprawki dla przełączników MQTT, bezpieczeństwa JSON, ewidencji rate-limit i kolejności stanu online. Wydajność dzięki pamięci podręcznej stanu.",
+                "uk": "Виправлення MQTT-перемикачів, безпеки JSON, обліку rate-limit та порядку online-станів. Продуктивність через кеш станів у пам'яті.",
+                "zh-cn": "修复MQTT开关、JSON安全、速率限制计费和在线状态顺序的错误。通过内存状态缓存提升性能。"
+            }
+        },
+        "titleLang": {
+            "en": "Govee Smart Appliances",
+            "de": "Govee Smart Appliances",
+            "ru": "Govee Smart Appliances",
+            "pt": "Govee Smart Appliances",
+            "nl": "Govee Smart Appliances",
+            "fr": "Govee Smart Appliances",
+            "it": "Govee Smart Appliances",
+            "es": "Govee Smart Appliances",
+            "pl": "Govee Smart Appliances",
+            "uk": "Govee Smart Appliances",
+            "zh-cn": "Govee Smart Appliances"
+        },
+        "desc": {
+            "en": "Control Govee smart home appliances (heaters, fans, humidifiers, purifiers, sensors) via Cloud API and MQTT",
+            "de": "Govee Smart-Home-Geräte (Heizung, Ventilator, Luftbefeuchter, Luftreiniger, Sensoren) über Cloud API und MQTT steuern",
+            "ru": "Управление умными бытовыми приборами Govee через Cloud API и MQTT",
+            "pt": "Controle eletrodomésticos inteligentes Govee via Cloud API e MQTT",
+            "nl": "Bedien Govee slimme huishoudelijke apparaten via Cloud API en MQTT",
+            "fr": "Contrôlez les appareils domestiques intelligents Govee via Cloud API et MQTT",
+            "it": "Controlla gli elettrodomestici intelligenti Govee tramite Cloud API e MQTT",
+            "es": "Controla los electrodomésticos inteligentes Govee a través de Cloud API y MQTT",
+            "pl": "Steruj inteligentnymi urządzeniami domowymi Govee przez Cloud API i MQTT",
+            "uk": "Керуйте розумними побутовими приладами Govee через Cloud API та MQTT",
+            "zh-cn": "通过Cloud API和MQTT控制Govee智能家电"
+        },
+        "authors": [
+            "krobi <krobi@power-dreams.com>"
+        ],
+        "licenseInformation": {
+            "license": "MIT",
+            "type": "free"
+        },
+        "platform": "Javascript/Node.js",
+        "icon": "govee-appliances.svg",
+        "extIcon": "https://raw.githubusercontent.com/krobipd/ioBroker.govee-appliances/main/admin/govee-appliances.svg",
+        "readme": "https://github.com/krobipd/ioBroker.govee-appliances/blob/main/README.md",
+        "enabled": true,
+        "tier": 3,
+        "loglevel": "info",
+        "mode": "daemon",
+        "keywords": [
+            "govee",
+            "goveelife",
+            "appliances",
+            "heater",
+            "humidifier",
+            "fan",
+            "purifier",
+            "sensor"
+        ],
+        "type": "household",
+        "compact": true,
+        "connectionType": "cloud",
+        "dataSource": "push",
+        "adminUI": {
+            "config": "json"
+        },
+        "supportedMessages": {
+            "stopInstance": true
+        },
+        "dependencies": [
+            {
+                "js-controller": ">=7.0.0"
+            }
+        ],
+        "globalDependencies": [
+            {
+                "admin": ">=7.6.20"
+            }
+        ]
     },
-    "titleLang": {
-      "en": "Govee Smart Appliances",
-      "de": "Govee Smart Appliances",
-      "ru": "Govee Smart Appliances",
-      "pt": "Govee Smart Appliances",
-      "nl": "Govee Smart Appliances",
-      "fr": "Govee Smart Appliances",
-      "it": "Govee Smart Appliances",
-      "es": "Govee Smart Appliances",
-      "pl": "Govee Smart Appliances",
-      "uk": "Govee Smart Appliances",
-      "zh-cn": "Govee Smart Appliances"
-    },
-    "desc": {
-      "en": "Control Govee smart home appliances (heaters, fans, humidifiers, purifiers, sensors) via Cloud API and MQTT",
-      "de": "Govee Smart-Home-Geräte (Heizung, Ventilator, Luftbefeuchter, Luftreiniger, Sensoren) über Cloud API und MQTT steuern",
-      "ru": "Управление умными бытовыми приборами Govee через Cloud API и MQTT",
-      "pt": "Controle eletrodomésticos inteligentes Govee via Cloud API e MQTT",
-      "nl": "Bedien Govee slimme huishoudelijke apparaten via Cloud API en MQTT",
-      "fr": "Contrôlez les appareils domestiques intelligents Govee via Cloud API et MQTT",
-      "it": "Controlla gli elettrodomestici intelligenti Govee tramite Cloud API e MQTT",
-      "es": "Controla los electrodomésticos inteligentes Govee a través de Cloud API y MQTT",
-      "pl": "Steruj inteligentnymi urządzeniami domowymi Govee przez Cloud API i MQTT",
-      "uk": "Керуйте розумними побутовими приладами Govee через Cloud API та MQTT",
-      "zh-cn": "通过Cloud API和MQTT控制Govee智能家电"
-    },
-    "authors": [
-      "krobi <krobi@power-dreams.com>"
+    "encryptedNative": [
+        "apiKey",
+        "goveePassword"
     ],
-    "licenseInformation": {
-      "license": "MIT",
-      "type": "free"
-    },
-    "platform": "Javascript/Node.js",
-    "icon": "govee-appliances.svg",
-    "extIcon": "https://raw.githubusercontent.com/krobipd/ioBroker.govee-appliances/main/admin/govee-appliances.svg",
-    "readme": "https://github.com/krobipd/ioBroker.govee-appliances/blob/main/README.md",
-    "enabled": true,
-    "tier": 3,
-    "loglevel": "info",
-    "mode": "daemon",
-    "keywords": [
-      "govee",
-      "goveelife",
-      "appliances",
-      "heater",
-      "humidifier",
-      "fan",
-      "purifier",
-      "sensor"
+    "protectedNative": [
+        "apiKey",
+        "goveePassword"
     ],
-    "type": "household",
-    "compact": true,
-    "connectionType": "cloud",
-    "dataSource": "push",
-    "adminUI": {
-      "config": "json"
-    },
-    "supportedMessages": {
-      "stopInstance": true
-    },
-    "dependencies": [
-      {
-        "js-controller": ">=7.0.0"
-      }
-    ],
-    "globalDependencies": [
-      {
-        "admin": ">=7.6.20"
-      }
-    ]
-  },
-  "encryptedNative": [
-    "apiKey",
-    "goveePassword"
-  ],
-  "protectedNative": [
-    "apiKey",
-    "goveePassword"
-  ],
-  "native": {
-    "apiKey": "",
-    "goveeEmail": "",
-    "goveePassword": "",
-    "pollInterval": 120
-  }
+    "native": {
+        "apiKey": "",
+        "goveeEmail": "",
+        "goveePassword": "",
+        "pollInterval": 120
+    }
 }

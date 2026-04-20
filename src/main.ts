@@ -4,6 +4,7 @@ import {
   mapCloudStateValue,
 } from "./lib/capability-mapper.js";
 import { DeviceManager } from "./lib/device-manager.js";
+import { GoveeAppApiClient } from "./lib/govee-app-api-client.js";
 import { GoveeCloudClient } from "./lib/govee-cloud-client.js";
 import { GoveeMqttClient } from "./lib/govee-mqtt-client.js";
 import { GoveeOpenapiMqttClient } from "./lib/govee-openapi-mqtt-client.js";
@@ -19,7 +20,21 @@ import type {
 /** Rate limit defaults */
 const FULL_LIMITS = { perMinute: 8, perDay: 9000 };
 const SHARED_LIMITS = { perMinute: 4, perDay: 4500 };
-const SIBLING_ALIVE_ID = "system.adapter.govee-smart.0.alive";
+/**
+ * Alive-state pattern for govee-smart instances. The adapter subscribes to
+ * every matching instance so a `.0` / `.1` multi-instance setup all participate
+ * in the shared rate-limit halving instead of silently running both adapters
+ * at full budget.
+ */
+const SIBLING_ALIVE_PATTERN = "system.adapter.govee-smart.*.alive";
+/**
+ * Simple test matching the pattern above against a concrete state id.
+ *
+ * @param id Fully-qualified foreign state id (e.g. `system.adapter.govee-smart.0.alive`)
+ */
+function isSiblingAliveId(id: string): boolean {
+  return id.startsWith("system.adapter.govee-smart.") && id.endsWith(".alive");
+}
 
 class GoveeAppliancesAdapter extends utils.Adapter {
   private deviceManager: DeviceManager | null = null;
@@ -27,11 +42,15 @@ class GoveeAppliancesAdapter extends utils.Adapter {
   private mqttClient: GoveeMqttClient | null = null;
   private openapiMqttClient: GoveeOpenapiMqttClient | null = null;
   private cloudClient: GoveeCloudClient | null = null;
+  private appApiClient: GoveeAppApiClient | null = null;
   private rateLimiter: RateLimiter | null = null;
   private skuCache: SkuCache | null = null;
   private pollTimer: ioBroker.Interval | undefined;
+  private appApiPollTimer: ioBroker.Interval | undefined;
   private readyLogged = false;
   private siblingActive = false;
+  /** Active govee-smart instance ids (e.g. "govee-smart.0") */
+  private siblingInstancesAlive = new Set<string>();
 
   public constructor(options: Partial<utils.AdapterOptions> = {}) {
     super({ ...options, name: "govee-appliances" });
@@ -145,6 +164,12 @@ class GoveeAppliancesAdapter extends utils.Adapter {
         this.log,
         timers,
       );
+      // App-API client shares the bearer token we get from the MQTT login.
+      // It polls the undocumented device-list endpoint to fill in sensor
+      // values (temperature/humidity/battery) that OpenAPI v2 `/device/state`
+      // leaves empty for cloud-synced devices like the H5179 thermometer.
+      this.appApiClient = new GoveeAppApiClient();
+      this.deviceManager.setAppApiClient(this.appApiClient);
       void this.mqttClient.connect(
         (update) => this.deviceManager!.handleMqttStatus(update),
         (connected) => {
@@ -155,6 +180,7 @@ class GoveeAppliancesAdapter extends utils.Adapter {
         },
         (deviceId, packets) =>
           this.deviceManager!.handleRawPackets(deviceId, packets),
+        (token) => this.appApiClient?.setBearerToken(token),
       );
     }
 
@@ -199,6 +225,16 @@ class GoveeAppliancesAdapter extends utils.Adapter {
       void this.pollCycle();
     }, pollMs);
 
+    // App-API polling — one call returns every device's latest lastDeviceData
+    // in a single request. Runs at the same cadence as the Cloud poll because
+    // the endpoint is cheap and Govee's apps typically hit it on every app
+    // open / pull-to-refresh without issues.
+    if (this.appApiClient) {
+      this.appApiPollTimer = this.setInterval(() => {
+        void this.appApiPollCycle();
+      }, pollMs);
+    }
+
     // Subscribe to all control states
     await this.subscribeStatesAsync("devices.*.control.*");
     await this.subscribeStatesAsync("devices.*.raw.diagnostics_export");
@@ -210,6 +246,19 @@ class GoveeAppliancesAdapter extends utils.Adapter {
       return;
     }
     await this.deviceManager.pollDeviceStates();
+  }
+
+  /**
+   * App-API polling — reads every device's last-known state via the
+   * undocumented `/device/rest/devices/v1/list` endpoint in one call.
+   * Fills in sensor values (temperature, humidity, battery, online) for
+   * devices where OpenAPI `/device/state` returns an empty capability list.
+   */
+  private async appApiPollCycle(): Promise<void> {
+    if (!this.deviceManager) {
+      return;
+    }
+    await this.deviceManager.pollAppApi();
   }
 
   /**
@@ -288,9 +337,20 @@ class GoveeAppliancesAdapter extends utils.Adapter {
     id: string,
     state: ioBroker.State | null | undefined,
   ): Promise<void> {
-    // Sibling adapter alive state change (foreign state, always ack)
-    if (id === SIBLING_ALIVE_ID) {
-      this.applySiblingLimits(state?.val === true);
+    // Sibling adapter alive state change (foreign state, always ack).
+    // Any govee-smart instance (.0, .1, ...) contributes — the adapter halves
+    // its budget when at least one is running, restores full limits only when
+    // all are down.
+    if (isSiblingAliveId(id)) {
+      const instance = id
+        .replace("system.adapter.", "")
+        .replace(/\.alive$/, "");
+      if (state?.val === true) {
+        this.siblingInstancesAlive.add(instance);
+      } else {
+        this.siblingInstancesAlive.delete(instance);
+      }
+      this.applySiblingLimits(this.siblingInstancesAlive.size > 0);
       return;
     }
 
@@ -467,14 +527,24 @@ class GoveeAppliancesAdapter extends utils.Adapter {
   }
 
   /**
-   * Detect if sibling adapter (govee-smart) is running and adjust rate limits.
-   * Subscribes to alive state for dynamic updates.
+   * Detect which govee-smart instances (if any) are running. Subscribes to
+   * the whole `system.adapter.govee-smart.*.alive` namespace so start/stop
+   * of any instance feeds back into applySiblingLimits.
    */
   private async detectSiblingAdapter(): Promise<void> {
     try {
-      const alive = await this.getForeignStateAsync(SIBLING_ALIVE_ID);
-      this.applySiblingLimits(alive?.val === true);
-      await this.subscribeForeignStatesAsync(SIBLING_ALIVE_ID);
+      const instances = await this.getForeignObjectsAsync(
+        "system.adapter.govee-smart.*",
+        "instance",
+      );
+      for (const id of Object.keys(instances ?? {})) {
+        const state = await this.getForeignStateAsync(`${id}.alive`);
+        if (state?.val === true) {
+          this.siblingInstancesAlive.add(id.replace("system.adapter.", ""));
+        }
+      }
+      this.applySiblingLimits(this.siblingInstancesAlive.size > 0);
+      await this.subscribeForeignStatesAsync(SIBLING_ALIVE_PATTERN);
     } catch {
       // Sibling not installed — use full limits
       this.applySiblingLimits(false);
@@ -547,6 +617,10 @@ class GoveeAppliancesAdapter extends utils.Adapter {
       if (this.pollTimer) {
         this.clearInterval(this.pollTimer);
         this.pollTimer = undefined;
+      }
+      if (this.appApiPollTimer) {
+        this.clearInterval(this.appApiPollTimer);
+        this.appApiPollTimer = undefined;
       }
       this.rateLimiter?.stop();
       this.mqttClient?.disconnect();

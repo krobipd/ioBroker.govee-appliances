@@ -190,14 +190,12 @@ class StateManager {
    */
   async updateDeviceStates(device, values) {
     const prefix = this.devicePrefix(device);
+    const writes = [];
     for (const v of values) {
-      if (v.stateId === "online") {
-        await this.setStateIfExists(`${prefix}.info.online`, v.value);
-        continue;
-      }
-      const fullPath = this.resolveStatePath(prefix, v.stateId);
-      await this.setStateIfExists(fullPath, v.value);
+      const path = v.stateId === "online" ? `${prefix}.info.online` : this.resolveStatePath(prefix, v.stateId);
+      writes.push(this.setStateIfExists(path, v.value));
     }
+    await Promise.all(writes);
   }
   /**
    * Update raw MQTT packet data for a device.

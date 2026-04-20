@@ -223,6 +223,20 @@ export interface ApplianceDevice {
   rawOpenapiEvents: Array<{ timestamp: number; data: string }>;
   /** Total OpenAPI MQTT events received */
   rawOpenapiEventCount: number;
+  /**
+   * Last parsed `lastDeviceData` from the app-API poll (optional — only
+   * present for devices whose state the app-API actually carries, which
+   * fills the gap left by OpenAPI `/device/state` for e.g. H5179).
+   */
+  appLastData?: {
+    online?: boolean;
+    tem?: number;
+    hum?: number;
+    battery?: number;
+    lastTime?: number;
+  };
+  /** Last parsed `deviceSettings` from the app-API — firmware, wifi info, calibration etc. */
+  appSettings?: Record<string, unknown>;
 }
 
 // --- Shared Utilities ---

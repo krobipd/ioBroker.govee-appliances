@@ -162,6 +162,14 @@ If you find this adapter useful, consider supporting the development:
 
 ### **WORK IN PROGRESS**
 
+### 0.0.9 (2026-04-20)
+- App-API sensor channel — polls `POST /device/rest/devices/v1/list` (Govee's undocumented app endpoint, shares the MQTT bearer token) to fill in temperature, humidity, battery and online for devices that OpenAPI v2 `/device/state` leaves empty. First supported case: H5179 WiFi Thermo-Hygrometer — now reports its real sensor values instead of `null`.
+- MQTT: stable session UUID across reconnects (`crypto.randomUUID`) — AWS IoT can cleanly retake a lingering socket instead of refusing new connections with two different client IDs.
+- MQTT: fresh bearer-token is forwarded to the app-API client on every login, so long-delay reconnects never leave dependents with a stale token.
+- Rate-limiter: daily reset aligned to UTC midnight (Govee's quota flips there) — no more wasted budget after an evening restart.
+- State writes in the update path run in parallel; sibling govee-smart detection covers every instance (`.0`, `.1`, ...) via a wildcard subscription.
+- Internal: shared `govee-constants.ts` for Govee app-impersonation headers, matching govee-smart v1.8.0.
+
 ### 0.0.8 (2026-04-19)
 - Harden `devicePrefix` SKU sanitisation: whitelist to `[a-z0-9_-]` with fallback to `unknown` for empty/garbled values. Cloud can theoretically return SKUs with spaces or dots (e.g. `"H7160 V2"`) — they now get normalised before landing in an object id. Matches the ioBroker best-practice the hueemu Latest-repo review called out.
 

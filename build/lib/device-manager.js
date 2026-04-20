@@ -18,7 +18,8 @@ var __copyProps = (to, from, except, desc) => {
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 var device_manager_exports = {};
 __export(device_manager_exports, {
-  DeviceManager: () => DeviceManager
+  DeviceManager: () => DeviceManager,
+  buildCapabilitiesFromAppEntry: () => buildCapabilitiesFromAppEntry
 });
 module.exports = __toCommonJS(device_manager_exports);
 var import_types = require("./types.js");
@@ -27,6 +28,7 @@ class DeviceManager {
   log;
   devices = /* @__PURE__ */ new Map();
   cloudClient = null;
+  appApiClient = null;
   rateLimiter = null;
   skuCache = null;
   onDeviceUpdate = null;
@@ -51,6 +53,16 @@ class DeviceManager {
    */
   setRateLimiter(limiter) {
     this.rateLimiter = limiter;
+  }
+  /**
+   * Set the app-API client. This is the undocumented `app2.govee.com` API
+   * that exposes sensor values which the OpenAPI v2 `/device/state` endpoint
+   * leaves empty for devices like the H5179 thermometer.
+   *
+   * @param client App-API client instance
+   */
+  setAppApiClient(client) {
+    this.appApiClient = client;
   }
   /**
    * Set SKU cache
@@ -176,6 +188,48 @@ class DeviceManager {
         this.log.warn(msg);
       } else {
         this.log.debug(msg);
+      }
+    }
+  }
+  /**
+   * Poll the undocumented app-API for devices that the OpenAPI `/device/state`
+   * endpoint doesn't expose. One call returns every device on the account
+   * with `lastDeviceData` (temperature, humidity, online, battery) embedded —
+   * cheap enough to run on a 2-minute cadence without risking rate limits.
+   *
+   * Per-device-matched entries synthesize `CloudStateCapability` objects so
+   * the existing state-update path can consume them without a new branch.
+   */
+  async pollAppApi() {
+    if (!this.appApiClient || !this.appApiClient.hasBearerToken()) {
+      return;
+    }
+    let entries;
+    try {
+      entries = await this.appApiClient.fetchDeviceList();
+    } catch (err) {
+      const category = (0, import_types.classifyError)(err);
+      const msg = `App API fetch failed: ${err instanceof Error ? err.message : String(err)}`;
+      if (category !== this.lastErrorCategory) {
+        this.lastErrorCategory = category;
+        this.log.warn(msg);
+      } else {
+        this.log.debug(msg);
+      }
+      return;
+    }
+    for (const entry of entries) {
+      const device = this.devices.get((0, import_types.normalizeDeviceId)(entry.device));
+      if (!device) {
+        continue;
+      }
+      const caps = buildCapabilitiesFromAppEntry(entry);
+      if (caps.length > 0) {
+        this.applyCloudState(device, caps);
+      }
+      if (entry.lastData || entry.settings) {
+        device.appLastData = entry.lastData;
+        device.appSettings = entry.settings;
       }
     }
   }
@@ -411,8 +465,51 @@ class DeviceManager {
     this.skuCache.save(data);
   }
 }
+function buildCapabilitiesFromAppEntry(entry) {
+  const caps = [];
+  const last = entry.lastData;
+  if (!last) {
+    return caps;
+  }
+  if (typeof last.online === "boolean") {
+    caps.push({
+      type: "devices.capabilities.online",
+      instance: "online",
+      state: { value: last.online }
+    });
+  }
+  if (typeof last.tem === "number" && Number.isFinite(last.tem)) {
+    caps.push({
+      type: "devices.capabilities.property",
+      instance: "sensorTemperature",
+      state: { value: last.tem / 100 }
+    });
+  }
+  if (typeof last.hum === "number" && Number.isFinite(last.hum)) {
+    caps.push({
+      type: "devices.capabilities.property",
+      instance: "sensorHumidity",
+      state: { value: last.hum / 100 }
+    });
+  }
+  if (typeof last.battery === "number" && Number.isFinite(last.battery)) {
+    caps.push({
+      type: "devices.capabilities.property",
+      instance: "battery",
+      state: { value: last.battery }
+    });
+  } else if (entry.settings && typeof entry.settings.battery === "number" && Number.isFinite(entry.settings.battery)) {
+    caps.push({
+      type: "devices.capabilities.property",
+      instance: "battery",
+      state: { value: entry.settings.battery }
+    });
+  }
+  return caps;
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  DeviceManager
+  DeviceManager,
+  buildCapabilitiesFromAppEntry
 });
 //# sourceMappingURL=device-manager.js.map

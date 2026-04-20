@@ -204,15 +204,18 @@ export class StateManager {
     values: CloudStateValue[],
   ): Promise<void> {
     const prefix = this.devicePrefix(device);
-
+    // Writes are independent — fire all in parallel instead of awaiting
+    // each sequentially. The in-memory knownStates gate stays cheap and
+    // skips any state the object tree no longer has.
+    const writes: Promise<unknown>[] = [];
     for (const v of values) {
-      if (v.stateId === "online") {
-        await this.setStateIfExists(`${prefix}.info.online`, v.value);
-        continue;
-      }
-      const fullPath = this.resolveStatePath(prefix, v.stateId);
-      await this.setStateIfExists(fullPath, v.value);
+      const path =
+        v.stateId === "online"
+          ? `${prefix}.info.online`
+          : this.resolveStatePath(prefix, v.stateId);
+      writes.push(this.setStateIfExists(path, v.value));
     }
+    await Promise.all(writes);
   }
 
   /**

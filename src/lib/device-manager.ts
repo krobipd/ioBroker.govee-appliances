@@ -1,3 +1,7 @@
+import type {
+  AppDeviceEntry,
+  GoveeAppApiClient,
+} from "./govee-app-api-client.js";
 import type { GoveeCloudClient } from "./govee-cloud-client.js";
 import type { RateLimiter } from "./rate-limiter.js";
 import type { CachedDeviceData, SkuCache } from "./sku-cache.js";
@@ -33,6 +37,7 @@ export class DeviceManager {
   private readonly log: ioBroker.Logger;
   private readonly devices = new Map<string, ApplianceDevice>();
   private cloudClient: GoveeCloudClient | null = null;
+  private appApiClient: GoveeAppApiClient | null = null;
   private rateLimiter: RateLimiter | null = null;
   private skuCache: SkuCache | null = null;
   private onDeviceUpdate: DeviceUpdateCallback | null = null;
@@ -60,6 +65,17 @@ export class DeviceManager {
    */
   setRateLimiter(limiter: RateLimiter): void {
     this.rateLimiter = limiter;
+  }
+
+  /**
+   * Set the app-API client. This is the undocumented `app2.govee.com` API
+   * that exposes sensor values which the OpenAPI v2 `/device/state` endpoint
+   * leaves empty for devices like the H5179 thermometer.
+   *
+   * @param client App-API client instance
+   */
+  setAppApiClient(client: GoveeAppApiClient): void {
+    this.appApiClient = client;
   }
 
   /**
@@ -210,6 +226,52 @@ export class DeviceManager {
         this.log.warn(msg);
       } else {
         this.log.debug(msg);
+      }
+    }
+  }
+
+  /**
+   * Poll the undocumented app-API for devices that the OpenAPI `/device/state`
+   * endpoint doesn't expose. One call returns every device on the account
+   * with `lastDeviceData` (temperature, humidity, online, battery) embedded —
+   * cheap enough to run on a 2-minute cadence without risking rate limits.
+   *
+   * Per-device-matched entries synthesize `CloudStateCapability` objects so
+   * the existing state-update path can consume them without a new branch.
+   */
+  async pollAppApi(): Promise<void> {
+    if (!this.appApiClient || !this.appApiClient.hasBearerToken()) {
+      return;
+    }
+    let entries: AppDeviceEntry[];
+    try {
+      entries = await this.appApiClient.fetchDeviceList();
+    } catch (err) {
+      const category = classifyError(err);
+      const msg = `App API fetch failed: ${err instanceof Error ? err.message : String(err)}`;
+      if (category !== this.lastErrorCategory) {
+        this.lastErrorCategory = category;
+        this.log.warn(msg);
+      } else {
+        this.log.debug(msg);
+      }
+      return;
+    }
+    for (const entry of entries) {
+      const device = this.devices.get(normalizeDeviceId(entry.device));
+      if (!device) {
+        continue;
+      }
+      const caps = buildCapabilitiesFromAppEntry(entry);
+      if (caps.length > 0) {
+        this.applyCloudState(device, caps);
+      }
+      // Keep the raw settings + lastData around for diagnostics — they have
+      // fields (wifiName, uploadRate, firmware) that aren't sensors but are
+      // useful support info.
+      if (entry.lastData || entry.settings) {
+        device.appLastData = entry.lastData;
+        device.appSettings = entry.settings;
       }
     }
   }
@@ -479,4 +541,65 @@ export class DeviceManager {
     };
     this.skuCache.save(data);
   }
+}
+
+/**
+ * Convert an app-API device entry into a `CloudStateCapability[]` that the
+ * adapter's existing state pipeline can consume — same shape as what the
+ * OpenAPI `/device/state` endpoint would return. Pure function so it's
+ * easy to test against fixtures captured from real responses.
+ *
+ * Govee's app stores temperature and humidity as hundredths-of-a-unit
+ * (`tem: 2370` → 23.70 °C, `hum: 4290` → 42.90 % RH).
+ *
+ * @param entry One parsed entry from the app-API device list
+ */
+export function buildCapabilitiesFromAppEntry(
+  entry: AppDeviceEntry,
+): CloudStateCapability[] {
+  const caps: CloudStateCapability[] = [];
+  const last = entry.lastData;
+  if (!last) {
+    return caps;
+  }
+  if (typeof last.online === "boolean") {
+    caps.push({
+      type: "devices.capabilities.online",
+      instance: "online",
+      state: { value: last.online },
+    });
+  }
+  if (typeof last.tem === "number" && Number.isFinite(last.tem)) {
+    caps.push({
+      type: "devices.capabilities.property",
+      instance: "sensorTemperature",
+      state: { value: last.tem / 100 },
+    });
+  }
+  if (typeof last.hum === "number" && Number.isFinite(last.hum)) {
+    caps.push({
+      type: "devices.capabilities.property",
+      instance: "sensorHumidity",
+      state: { value: last.hum / 100 },
+    });
+  }
+  // Battery can appear at top level or via settings — prefer lastData
+  if (typeof last.battery === "number" && Number.isFinite(last.battery)) {
+    caps.push({
+      type: "devices.capabilities.property",
+      instance: "battery",
+      state: { value: last.battery },
+    });
+  } else if (
+    entry.settings &&
+    typeof entry.settings.battery === "number" &&
+    Number.isFinite(entry.settings.battery)
+  ) {
+    caps.push({
+      type: "devices.capabilities.property",
+      instance: "battery",
+      state: { value: entry.settings.battery },
+    });
+  }
+  return caps;
 }
