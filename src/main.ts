@@ -78,6 +78,10 @@ class GoveeAppliancesAdapter extends utils.Adapter {
 
   /** Adapter started — initialize all channels */
   private async onReady(): Promise<void> {
+    this.log.warn(
+      "This adapter is DEPRECATED. Please install ioBroker.govee-smart v2.0.0+ which now handles Govee appliances and sensors together with lights. See https://github.com/krobipd/ioBroker.govee-smart",
+    );
+
     const config = this.config as unknown as AdapterConfig;
 
     if (!config.apiKey) {

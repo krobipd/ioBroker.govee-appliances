@@ -11,9 +11,13 @@
 
 <img src="https://raw.githubusercontent.com/krobipd/ioBroker.govee-appliances/main/admin/govee-appliances.svg" width="100" />
 
-Control [Govee](https://www.govee.com/) smart home appliances (heaters, fans, humidifiers, purifiers, sensors) via Cloud API and MQTT.
+> ## ⚠️ Deprecated — please migrate to [ioBroker.govee-smart](https://github.com/krobipd/ioBroker.govee-smart) v2.0.0+
+>
+> Govee appliances and sensors are now handled by **govee-smart** together with lights. This adapter receives no further updates.
+>
+> **Veraltet — bitte zu [ioBroker.govee-smart](https://github.com/krobipd/ioBroker.govee-smart) v2.0.0+ wechseln.** Govee Appliances und Sensoren laufen ab govee-smart v2.0.0 zusammen mit den Lights über den Hauptadapter. Dieser Adapter bekommt keine weiteren Updates.
 
-> **Alpha — Testers wanted!** This adapter discovers and controls Govee appliances, but has not been tested with real hardware yet. If you own a Govee heater, fan, humidifier, purifier, or similar device — your data helps make this adapter work for everyone. See [How to help](#how-to-help-share-your-device-data) below.
+Control [Govee](https://www.govee.com/) smart home appliances (heaters, fans, humidifiers, purifiers, sensors) via Cloud API and MQTT.
 
 ---
 
