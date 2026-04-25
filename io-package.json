@@ -1,7 +1,7 @@
 {
     "common": {
         "name": "govee-appliances",
-        "version": "0.0.9",
+        "version": "0.1.0",
         "news": {
             "0.0.9": {
                 "en": "New app-API sensor channel — fills in temperature/humidity for cloud-synced sensors like H5179 that OpenAPI v2 /device/state leaves empty. Plus v1.8.0 patterns from govee-smart: UTC-aligned daily reset, stable MQTT session UUID, shared govee-constants, crypto.randomUUID, sibling govee-smart detection across all instances, parallel state writes.",
